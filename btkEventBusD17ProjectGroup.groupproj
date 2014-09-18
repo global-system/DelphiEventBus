@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{04C46F45-C321-4960-971B-A155134499F6}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Packages\btkEventBusD17.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Tests\DunitX.btkEventBus.dproj">
+            <Dependencies>Packages\btkEventBusD17.dproj</Dependencies>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="btkEventBusD17">
+        <MSBuild Projects="Packages\btkEventBusD17.dproj"/>
+    </Target>
+    <Target Name="btkEventBusD17:Clean">
+        <MSBuild Projects="Packages\btkEventBusD17.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="btkEventBusD17:Make">
+        <MSBuild Projects="Packages\btkEventBusD17.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DunitX_btkEventBus" DependsOnTargets="btkEventBusD17">
+        <MSBuild Projects="Tests\DunitX.btkEventBus.dproj"/>
+    </Target>
+    <Target Name="DunitX_btkEventBus:Clean" DependsOnTargets="btkEventBusD17:Clean">
+        <MSBuild Projects="Tests\DunitX.btkEventBus.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DunitX_btkEventBus:Make" DependsOnTargets="btkEventBusD17:Make">
+        <MSBuild Projects="Tests\DunitX.btkEventBus.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="btkEventBusD17;DunitX_btkEventBus"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="btkEventBusD17:Clean;DunitX_btkEventBus:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="btkEventBusD17:Make;DunitX_btkEventBus:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
