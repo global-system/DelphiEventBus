@@ -48,7 +48,7 @@ EventBus предназначен для обеспечения взаимоде
    - Тип обработчика определятся аннотацией.
 
 ###Example of use
-
+```delphi
 	//event class declaration
 	Type
 	  TFooEventObject = class(TbtkEventObject)
@@ -91,3 +91,4 @@ EventBus предназначен для обеспечения взаимоде
 
 	//listener unregistration
 	  EventBus.Unregister(FooListener);
+```
