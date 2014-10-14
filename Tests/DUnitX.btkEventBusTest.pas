@@ -109,6 +109,8 @@ type
     [Test]
     procedure Send_NotHashedFiltersIsEmptyHashedFiltersLikeInEvent_HandlerCalled;
     [Test]
+    procedure Send_2HashedFiltersInListenerMatchFiltersInEvent2NotHashedFilterMismatchFiltersInEvent_HandlerNotCalled;
+    [Test]
     procedure Send_HandlerContainParentClassOfEvent_HandlerCalled;
     [Test]
     procedure Send_HookContainParentClassOfEvent_HookCalled;
@@ -365,6 +367,24 @@ begin
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := EmptyStr;
 
     Listener.Setup.Expect.Once('Handler');
+    EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue',
+      'NotHashedTestFilterValue', 'NotHashedTestFilter2Value'));
+    Listener.Verify;
+  finally
+    UnRegisterListener;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_2HashedFiltersInListenerMatchFiltersInEvent2NotHashedFilterMismatchFiltersInEvent_HandlerNotCalled;
+begin
+  RegisterListener;
+  try
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := 'HashedTestFilterValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := '-NotHashedTestFilterValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := '-NotHashedTestFilter2Value';
+
+    Listener.Setup.Expect.Never('Handler');
     EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue',
       'NotHashedTestFilterValue', 'NotHashedTestFilter2Value'));
     Listener.Verify;

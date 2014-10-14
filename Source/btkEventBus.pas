@@ -922,16 +922,17 @@ procedure TbtkEventBus.Send(AEventObject: IbtkEventObject; AExceptionHandler: Tb
   var
     i: Integer;
     filterNames: TArray<string>;
-    eventFilter: TbtkEventFilter;
+    eventFilter, handlerFilter: TbtkEventFilter;
   begin
     Result := True;
     filterNames := AEventFilters.Keys.ToArray;
     for i := 0 to Length(filterNames) - 1 do
     begin
-      eventFilter := AHandlerFilters[NormalizeFilterName(filterNames[i])];
+      eventFilter := AEventFilters[filterNames[i]];
+      handlerFilter := AHandlerFilters[filterNames[i]];
       if (not eventFilter.IsPartOfHashingString) and
-        (eventFilter.Value <> EmptyStr) and
-        (eventFilter.Value <> eventFilter.Value) then
+        (handlerFilter.Value <> EmptyStr) and
+        (handlerFilter.Value <> eventFilter.Value) then
         Exit(False);
     end;
   end;
