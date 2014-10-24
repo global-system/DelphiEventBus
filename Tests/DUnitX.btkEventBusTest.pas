@@ -72,6 +72,8 @@ type
     Listener: TMock<TbtkTestEventListener>;
     InvalidListener: TMock<TbtkTestInvalidEventListener>;
     ListenerInfo: TbtkListenerInfo;
+    Listeners: array[0..2] of TMock<TbtkTestEventListener>;
+    ListenersInfo: array[0..2] of TbtkListenerInfo;
 
     [Setup]
     procedure Setup;
@@ -81,6 +83,8 @@ type
     procedure RegisterListener;
     procedure UnRegisterListener;
     procedure RegisterInvalidListener;
+    procedure RegisterListeners;
+    procedure UnRegisterListeners;
 
     [Test]
     procedure Register_ListenerIsValid_WillNotRaise;
@@ -126,6 +130,8 @@ type
     procedure Send_ExceptionRaisedInHandlerAndExistExceptionHandler_ExceptionHandlerCalled;
     [Test]
     procedure Send_ExceptionRaisedInEachHooksAndHandlersRaisedAnException_AllHooksAndHandlersCalled;
+    [Test]
+    procedure Send_1Event3Listeners_EachHandlerCalledOnce;
   end;
 
   TbtkEventFiltersTest = class(TObject)
@@ -190,16 +196,24 @@ end;
 { TbtkEventBusTest }
 
 procedure TbtkEventBusTest.Setup;
+var
+  i: Integer;
 begin
   EventBus := TbtkEventBus.GetEventBus;
   Listener := TMock<TbtkTestEventListener>.Create;
   InvalidListener := TMock<TbtkTestInvalidEventListener>.Create;
+  for i := Low(Listeners) to High(Listeners) do
+    Listeners[i] := TMock<TbtkTestEventListener>.Create;
 end;
 
 procedure TbtkEventBusTest.TearDown;
+var
+  i: Integer;
 begin
   Listener.Free;
   InvalidListener.Free;
+  for i := Low(Listeners) to High(Listeners) do
+    Listeners[i].Free;
   EventBus := nil;
 end;
 
@@ -216,6 +230,22 @@ end;
 procedure TbtkEventBusTest.RegisterInvalidListener;
 begin
   EventBus.Register(InvalidListener);
+end;
+
+procedure TbtkEventBusTest.RegisterListeners;
+var
+  i: Integer;
+begin
+  for i := Low(Listeners) to High(Listeners) do
+    ListenersInfo[i] := EventBus.Register(Listeners[i]);
+end;
+
+procedure TbtkEventBusTest.UnRegisterListeners;
+var
+  i: Integer;
+begin
+  for i := Low(Listeners) to High(Listeners) do
+    EventBus.UnRegister(Listeners[i]);
 end;
 
 procedure TbtkEventBusTest.Register_ListenerIsValid_WillNotRaise;
@@ -535,6 +565,28 @@ begin
     UnRegisterListener;
     Application.OnException := nil;
     fakeExceptionHandler.Free;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_1Event3Listeners_EachHandlerCalledOnce;
+var
+  i: Integer;
+begin
+  RegisterListeners;
+  try
+    for i := Low(Listeners) to High(Listeners) do
+    begin
+      ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
+      ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := 'HashedTestFilterValue';
+      ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
+      ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
+      Listeners[i].Setup.Expect.Once('Handler');
+    end;
+    EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue', 'NotHashedTestFilterValue', 'NotHashedTestFilter2Value'));
+    for i := Low(Listeners) to High(Listeners) do
+      Listeners[i].Verify;
+  finally
+    UnRegisterListeners;
   end;
 end;
 

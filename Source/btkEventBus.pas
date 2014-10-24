@@ -984,7 +984,7 @@ begin
           if eventHandlers.HandlerLists.TryGetValue(eventFilters.HashingString, eventHandlerList) then
             for i := 0 to eventHandlerList.Count - 1 do
               if FiltersMatch(eventFilters, eventHandlerList[i].Filters) then
-                handlers.AddRange(eventHandlerList.ToArray);
+                handlers.Add(eventHandlerList[i]);
         end;
       finally
         eventFilters.Free;
