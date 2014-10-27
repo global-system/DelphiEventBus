@@ -306,10 +306,10 @@ begin
   try
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := 'HashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
 
-    Listener.Setup.Expect.Once('Handler');
+    Listener.Setup.Expect.Once('Handler');
     EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue', 'NotHashedTestFilterValue', 'NotHashedTestFilter2Value'));
     Listener.Verify;
   finally
@@ -323,10 +323,10 @@ begin
   try
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := 'HashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
 
-    Listener.Setup.Expect.Once('Hook');
+    Listener.Setup.Expect.Once('Hook');
     EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue', 'NotHashedTestFilterValue', 'NotHashedTestFilter2Value'));
     Listener.Verify;
   finally
@@ -340,10 +340,10 @@ begin
   try
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := '-TopicValue';
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := '-HashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := '-NotHashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := '-NotHashedTestFilter2Value';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := '-NotHashedTestFilterValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := '-NotHashedTestFilter2Value';
 
-    Listener.Setup.Expect.Once('Hook');
+    Listener.Setup.Expect.Once('Hook');
     EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue', 'NotHashedTestFilterValue', 'NotHashedTestFilter2Value'));
     Listener.Verify;
   finally
@@ -357,8 +357,8 @@ begin
   try
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := '-TopicValue';
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := '-HashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := '-NotHashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := '-NotHashedTestFilter2Value';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := '-NotHashedTestFilterValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := '-NotHashedTestFilter2Value';
 
     Listener.Setup.Expect.Never('Handler');
     EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue',
@@ -375,8 +375,8 @@ begin
   try
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := EmptyStr;
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
 
     Listener.Setup.Expect.Never('Handler');
     EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue',
@@ -393,8 +393,8 @@ begin
   try
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := 'HashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := EmptyStr;
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := EmptyStr;
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := EmptyStr;
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := EmptyStr;
 
     Listener.Setup.Expect.Once('Handler');
     EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue',
@@ -411,8 +411,8 @@ begin
   try
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
     ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := 'HashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := '-NotHashedTestFilterValue';
-    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := '-NotHashedTestFilter2Value';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := '-NotHashedTestFilterValue';
+    ListenerInfo.HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := '-NotHashedTestFilter2Value';
 
     Listener.Setup.Expect.Never('Handler');
     EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue',
@@ -569,20 +569,20 @@ begin
 end;
 
 procedure TbtkEventBusTest.Send_1Event3Listeners_EachHandlerCalledOnce;
-var
-  i: Integer;
-begin
+var
+  i: Integer;
+begin
   RegisterListeners;
   try
     for i := Low(Listeners) to High(Listeners) do
     begin
       ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
       ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventHashedTestFilterName].Value := 'HashedTestFilterValue';
-      ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
-      ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
-      Listeners[i].Setup.Expect.Once('Handler');
-    end;
-    EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue', 'NotHashedTestFilterValue', 'NotHashedTestFilter2Value'));
+      ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilterName].Value := 'NotHashedTestFilterValue';
+      ListenersInfo[i].HandlerFilters[TbtkTestEventObject][TbtkTestEventObject.sEventNotHashedTestFilter2Name].Value := 'NotHashedTestFilter2Value';
+      Listeners[i].Setup.Expect.Once('Handler');
+    end;
+    EventBus.Send(TbtkTestEventObject.Create('TopicValue', 'HashedTestFilterValue', 'NotHashedTestFilterValue', 'NotHashedTestFilter2Value'));
     for i := Low(Listeners) to High(Listeners) do
       Listeners[i].Verify;
   finally
