@@ -1,0 +1,7 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+*.pas text eol=crlf
+*.inc text eol=crlf
+*.dpk text eol=crlf
+*.dpr text eol=crlf
