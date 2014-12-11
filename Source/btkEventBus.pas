@@ -59,7 +59,7 @@ type
   TbtkEventObjectClass = class of TbtkEventObject;
 
   /// <summary>IbtkEventObject
-  /// Interface is used to prevent destruction of event-object while not all handlers of listeners have been handled
+  /// Need to prevent destruction of event-object while not all handlers of listeners have been handled
   /// </summary>
   IbtkEventObject = interface
   ['{F38E532F-1F8D-4950-AB31-D6B6E75B69A5}']
@@ -71,7 +71,7 @@ type
   end;
 
   /// <summary>TbtkEventObject
-  /// Base class of all event-objects. Implements the interface IbtkEventObject.
+  /// Base class of all event-objects.
   /// </summary>
   TbtkEventObject = class(TInterfacedObject, IbtkEventObject)
   private
@@ -128,7 +128,7 @@ type
   end;
 
   /// <summary>TbtkEventFiltersRTTIInfo
-  /// Is used to store and retrieve information about filters of event-object classes.
+  /// Contains information about filters.
   /// </summary>
   TbtkEventFiltersRTTIInfo = record
   strict private
@@ -149,7 +149,7 @@ type
   end;
 
   /// <summary>TbtkEventHandlersRTTIInfo
-  /// Is used to store and retrieve information about hooks and handlers of listener classes.
+  /// Contains information about handlers and hooks.
   /// </summary>
   TbtkEventHandlersRTTIInfo = record
   strict private
@@ -192,7 +192,7 @@ type
     procedure SetValue(const AValue: string);
   protected
     /// <summary>TbtkEventFilter.OnValueChanged
-    /// Is used to call hash recalculating, when hashed filter value is changed.
+    /// It's necessary for call hash recalculating, when hashed filter value is changed.
     /// </summary>
     property OnValueChanged: TNotifyEvent read FOnValueChanged write FOnValueChanged;
   public
@@ -222,11 +222,11 @@ type
     function GetFilters(AName: string): TbtkEventFilter;
   protected
     /// <summary>TbtkEventFilters.ValueNotify
-    /// Is used to set handler for the event "OnValueChanged" of filters.
+    /// Sets the handler for the event "OnValueChanged" of filters.
     /// </summary>
     procedure ValueNotify(const Value: TbtkEventFilter; Action: TCollectionNotification); override;
     /// <summary>TbtkEventFilters.OnHashingStringChanged
-    /// Is used to call hash recalculating, when hashed filter value is changed.
+    /// It's necessary for call hash recalculating, when hashed filter value is changed.
     /// </summary>
     property OnHashingStringChanged: TbtkHashingStringChangeNotifyEvent read FHashingStringChanged write FHashingStringChanged;
   public
@@ -239,69 +239,168 @@ type
     property Filters[AName: string]: TbtkEventFilter read GetFilters; default;
   end;
 
+  /// <summary>IbtkCustomEventHandler
+  /// Base interface for event-hooks and event-handlers.
+  /// </summary>
+  IbtkCustomEventHandler = interface
+    function GetListener: TObject;
+    function GetExtracted: Boolean;
+    procedure SetExtracted(AValue: Boolean);
+    /// <summary>IbtkCustomEventHandler.Invoke
+    /// Calls event-hook or event-handler.
+    /// </summary>
+    procedure Invoke(AEventObject: IbtkEventObject);
+    /// <summary>IbtkCustomEventHandler.Lock
+    /// Used to provide thread safety.
+    /// </summary>
+    function Lock(ATimeout: Cardinal = INFINITE): Boolean;
+    /// <summary>IbtkCustomEventHandler.Unlock
+    /// Used to provide thread safety.
+    /// </summary>
+    procedure Unlock;
+    /// <summary>IbtkCustomEventHandler.Listener
+    /// Listener who owns an event-hook or event-handler.
+    /// </summary>
+    property Listener: TObject read GetListener;
+    /// <summary>IbtkCustomEventHandler.Extracted
+    /// Allows to check that the listener was not extracted from the eventbus.
+    /// </summary>
+    property Extracted: Boolean read GetExtracted write SetExtracted;
+  end;
+
+  /// <summary>IbtkEventHandler
+  /// Allows to call event-handler and gain access to his filters.
+  /// </summary>
+  IbtkEventHandler = interface(IbtkCustomEventHandler)
+    function GetFilters: TbtkEventFilters;
+    /// <summary>TbtkEventHandler.Filters
+    /// Reference to filters of event-handler.
+    /// </summary>
+    property Filters: TbtkEventFilters read GetFilters;
+  end;
+
+  /// <summary>IbtkEventHook
+  /// Allows to call event-hook, and gain access to his absolute number.
+  /// </summary>
+  IbtkEventHook = interface(IbtkCustomEventHandler)
+    function GetAbsoluteNumber: Integer;
+    /// <summary>TbtkEventHook.AbsoluteNumber
+    /// Ordinal number of hook.
+    /// </summary>
+    property AbsoluteNumber: Integer read GetAbsoluteNumber;
+  end;
+
+  TbtkCustomHandlerList = TList<IbtkCustomEventHandler>;
+  TbtkHookList = TList<IbtkEventHook>;
+  TbtkHandlerList = TList<IbtkEventHandler>;
+
   /// <summary>TbtkCustomEventHandler
   /// Base class for event-hooks and event-handlers.
   /// </summary>
-  TbtkCustomEventHandler = class
+  TbtkCustomEventHandler = class(TInterfacedObject, IbtkCustomEventHandler)
   strict private
     FListener: TObject;
     FMethod: TRttiMethod;
+    FExtracted: Boolean;
+    function GetListener: TObject;
+    function GetExtracted: Boolean;
+    procedure SetExtracted(AValue: Boolean);
   public
     constructor Create(AListener: TObject; AMethod: TRttiMethod); virtual;
     /// <summary>TbtkCustomEventHandler.Invoke
-    /// Calls event-hook or event-handler.
+    /// Implements IbtkCustomEventHandler.Invoke
     /// </summary>
     procedure Invoke(AEventObject: IbtkEventObject); inline;
-    /// <summary>TbtkCustomEventHandler.Listener
-    /// Listener who owns an event-hook or event-handler.
+    /// <summary>TbtkCustomEventHandler.Lock
+    /// Implements IbtkCustomEventHandler.Lock
     /// </summary>
-    property Listener: TObject read FListener;
+    function Lock(ATimeout: Cardinal = INFINITE): Boolean;
+    /// <summary>TbtkCustomEventHandler.Unlock
+    /// Implements IbtkCustomEventHandler.Unlock
+    /// </summary>
+    procedure Unlock;
+    /// <summary>TbtkCustomEventHandler.Listener
+    /// Implements IbtkCustomEventHandler.Listener
+    /// </summary>
+    property Listener: TObject read GetListener;
+    /// <summary>TbtkCustomEventHandler.Extracted
+    /// Implements IbtkCustomEventHandler.Extracted
+    /// </summary>
+    property Extracted: Boolean read GetExtracted write SetExtracted;
   end;
 
   /// <summary>TbtkEventHandler
   /// Allows to call event-handler and gain access to his filters.
   /// </summary>
-  TbtkEventHandler = class(TbtkCustomEventHandler)
+  TbtkEventHandler = class(TbtkCustomEventHandler, IbtkEventHandler)
   private
     FFilters: TbtkEventFilters;
     FHashingStringChanged: TbtkHashingStringChangeNotifyEvent;
     procedure HashingStringChanged(ASender: TObject; AOldValue: string);
+    function GetFilters: TbtkEventFilters;
   protected
     /// <summary>TbtkEventHandler.OnHashingStringChanged
-    /// Is used to call hash recalculating, when hashed filter value is changed.
+    /// It's necessary for call hash recalculating, when hashed filter value is changed.
     /// </summary>
     property OnHashingStringChanged: TbtkHashingStringChangeNotifyEvent read FHashingStringChanged write FHashingStringChanged;
   public
     constructor Create(AListener: TObject; AMethod: TRttiMethod; AFilters: TbtkEventFilters); reintroduce;
     destructor Destroy; override;
     /// <summary>TbtkEventHandler.Filters
-    /// Reference to filters of event-handler.
+    /// Implements IbtkEventHandler.Filters
     /// </summary>
-    property Filters: TbtkEventFilters read FFilters;
+    property Filters: TbtkEventFilters read GetFilters;
   end;
 
   /// <summary>TbtkEventHook
   /// Allows to call event-hook, and gain access to his absolute number.
   /// </summary>
-  TbtkEventHook = class(TbtkCustomEventHandler)
+  TbtkEventHook = class(TbtkCustomEventHandler, IbtkEventHook)
   private
     FAbsoluteNumber: Integer;
+    function GetAbsoluteNumber: Integer;
     class var HookCounter: Integer;
   public
     class constructor Create;
     constructor Create(AListener: TObject; AMethod: TRttiMethod); override;
     /// <summary>TbtkEventHook.AbsoluteNumber
-    /// Ordinal number of hook. Is used to sort hooks in the order of their creation.
+    /// Implements IbtkEventHook.AbsoluteNumber
     /// </summary>
-    property AbsoluteNumber: Integer read FAbsoluteNumber;
+    property AbsoluteNumber: Integer read GetAbsoluteNumber;
   end;
 
   /// <summary>TbtkEventHookComparer
-  /// Is used to sort hooks in the order of their creation.
+  /// Compares hooks by  their AbsoluteNumber.
   /// </summary>
-  TbtkEventHookComparer = class(TComparer<TbtkEventHook>)
+  TbtkEventHookComparer = class(TComparer<IbtkEventHook>)
   public
-    function Compare(const Left, Right: TbtkEventHook): Integer; override;
+    function Compare(const Left, Right: IbtkEventHook): Integer; override;
+  end;
+
+  /// <summary>IbtkEventHandlerEnumerator
+  /// Implement enumeration list of handlers.
+  /// </summary>
+  IbtkEventHandlerEnumerator = interface
+  ['{9E2E497D-E4F8-48A0-8C47-8A7B337667B5}']
+    function GetCurrent: IbtkCustomEventHandler;
+    function MoveNext: Boolean;
+    property Current: IbtkCustomEventHandler read GetCurrent;
+  end;
+
+  /// <summary>TbtkEeventHandlerEnumerator
+  /// Implement enumeration list of handlers.
+  /// </summary>
+  TbtkEeventHandlerEnumerator = class(TInterfacedObject, IbtkEventHandlerEnumerator)
+  private
+    FHandlerList: TbtkCustomHandlerList;
+    FIndex: Integer;
+    function GetCurrent: IbtkCustomEventHandler;
+  public
+    constructor Create; reintroduce;
+    destructor Destroy; override;
+    function MoveNext: Boolean;
+    procedure AddHandler(AHandler: IbtkCustomEventHandler);
+    property Current: IbtkCustomEventHandler read GetCurrent;
   end;
 
   /// <summary>TbtkListenerInfo
@@ -341,8 +440,6 @@ type
   private
     type
       THashingString = string;
-      TbtkHookList = TObjectList<TbtkEventHook>;
-      TbtkHandlerList = TObjectList<TbtkEventHandler>;
       TbtkHandlerDictionary = TObjectDictionary<THashingString, TbtkHandlerList>;
     var
       FHookList: TbtkHookList;
@@ -350,7 +447,7 @@ type
 
     procedure HashingStringChanged(ASender: TObject; AOldValue: string);
   public
-    constructor Create(AEventClassType: TbtkEventObjectClass);
+    constructor Create;
     destructor Destroy; override;
     /// <summary>TbtkEventHandlers.HookList
     /// List of all hooks, that were set for this event.
@@ -373,7 +470,7 @@ type
     /// Calls event handling.
     /// If an event handler raises an exception, process of calling other handlers
     /// not will aborted, but will be called ApplicationHandleException.
-    /// For exception handling must specify "AExceptionHandler"..
+    /// For exception handling must specify "AExceptionHandler".
     /// </summary>
     procedure Send(AEventObject: IbtkEventObject; AExceptionHandler: TbtkEventExceptionHandler = nil);
     /// <summary>IbtkEventBus.Register
@@ -386,15 +483,15 @@ type
     procedure UnRegister(AListener: TObject);
   end;
 
-  /// <summary>TbtkEventBus
-  /// Implements the interface IbtkEventBus. Allows you to create a new EventBus,
+  /// <summary>TbtkCustomEventBus
+  /// Allows you to create a new EventBus,
   /// or get access to the global named EventBus.
   /// </summary>
-  TbtkEventBus = class(TInterfacedObject, IbtkEventBus)
+  TbtkCustomEventBus = class(TInterfacedObject, IbtkEventBus)
   strict private
     type
       TEventBusName = string;
-    class var FEventBusDictionary: TDictionary<TEventBusName, TbtkEventBus>;
+    class var FEventBusDictionary: TDictionary<TEventBusName, TbtkCustomEventBus>;
   private
     FName: string;
     FListenersInfo: TObjectDictionary<TObject, TbtkListenerInfo>;
@@ -407,6 +504,8 @@ type
     /// Removes hooks and handlers of the listener.
     /// </summary>
     procedure RemoveFromListener(AEventObjectClass: TbtkEventObjectClass; AListenerInfo: TbtkListenerInfo);
+  protected
+    procedure InternalSend(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator; AExceptionHandler: TbtkEventExceptionHandler); virtual; abstract;
   public
     class constructor Create;
     class destructor Destroy;
@@ -429,6 +528,33 @@ type
     /// </summary>
     procedure UnRegister(AListener: TObject);
   end;
+
+  TbtkCustomEventSender = class(TInterfacedObject)
+  protected
+    procedure DoExecuteHandlers(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator; AExceptionHandler: TbtkEventExceptionHandler);
+  public
+    procedure Send(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator; AExceptionHandler: TbtkEventExceptionHandler); virtual; abstract;
+  end;
+
+  TbtkEventBus<T: TbtkCustomEventSender, constructor> = class(TbtkCustomEventBus)
+  private
+    FEventSender: T;
+  protected
+    procedure InternalSend(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator; AExceptionHandler: TbtkEventExceptionHandler); override;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+  end;
+
+  TbtkSyncEventSender = class(TbtkCustomEventSender)
+  public
+    procedure Send(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator; AExceptionHandler: TbtkEventExceptionHandler); override;
+  end;
+
+  TbtkEventBus = TbtkEventBus<TbtkSyncEventSender>;
+
+var
+  ThreadLockWaitingTimeout: Cardinal = 30000;
 
 implementation
 
@@ -691,10 +817,26 @@ end;
 
 { TbtkCustomEventHandler }
 
+function TbtkCustomEventHandler.GetListener: TObject;
+begin
+  Result := FListener;
+end;
+
+function TbtkCustomEventHandler.GetExtracted: Boolean;
+begin
+  Result := FExtracted;
+end;
+
+procedure TbtkCustomEventHandler.SetExtracted(AValue: Boolean);
+begin
+  FExtracted := AValue;
+end;
+
 constructor TbtkCustomEventHandler.Create(AListener: TObject; AMethod: TRttiMethod);
 begin
   FListener := AListener;
   FMethod := AMethod;
+  FExtracted := False;
 end;
 
 procedure TbtkCustomEventHandler.Invoke(AEventObject: IbtkEventObject);
@@ -702,7 +844,22 @@ begin
   FMethod.Invoke(Listener, [AEventObject.Instance]);
 end;
 
+function TbtkCustomEventHandler.Lock(ATimeout: Cardinal): Boolean;
+begin
+  Result := MonitorEnter(Self, ATimeout);
+end;
+
+procedure TbtkCustomEventHandler.Unlock;
+begin
+  MonitorExit(Self);
+end;
+
 { TbtkEventHandler }
+
+function TbtkEventHandler.GetFilters: TbtkEventFilters;
+begin
+  Result := FFilters;
+end;
 
 constructor TbtkEventHandler.Create(AListener: TObject; AMethod: TRttiMethod; AFilters: TbtkEventFilters);
 begin
@@ -725,6 +882,11 @@ end;
 
 { TbtkEventHook }
 
+function TbtkEventHook.GetAbsoluteNumber: Integer;
+begin
+  Result := FAbsoluteNumber;
+end;
+
 class constructor TbtkEventHook.Create;
 begin
   HookCounter := 0;
@@ -739,9 +901,42 @@ end;
 
 { TbtkEventHookComparer }
 
-function TbtkEventHookComparer.Compare(const Left, Right: TbtkEventHook): Integer;
+function TbtkEventHookComparer.Compare(const Left, Right: IbtkEventHook): Integer;
 begin
   Result := TComparer<Integer>.Default.Compare(Left.AbsoluteNumber, Right.AbsoluteNumber);
+end;
+
+{ TbtkEeventHandlerEnumerator }
+
+function TbtkEeventHandlerEnumerator.GetCurrent: IbtkCustomEventHandler;
+begin
+  Result := FHandlerList[FIndex];
+end;
+
+constructor TbtkEeventHandlerEnumerator.Create;
+begin
+  inherited Create;
+  FIndex := -1;
+  FHandlerList := TbtkCustomHandlerList.Create;
+end;
+
+destructor TbtkEeventHandlerEnumerator.Destroy;
+begin
+  FHandlerList.Free;
+  inherited;
+end;
+
+function TbtkEeventHandlerEnumerator.MoveNext: Boolean;
+begin
+  if FIndex >= FHandlerList.Count then
+    Exit(False);
+  Inc(FIndex);
+  Result := FIndex < FHandlerList.Count;
+end;
+
+procedure TbtkEeventHandlerEnumerator.AddHandler(AHandler: IbtkCustomEventHandler);
+begin
+  FHandlerList.Add(AHandler);
 end;
 
 { TbtkListenerInfo }
@@ -788,11 +983,10 @@ end;
 
 { TbtkEventHandlers }
 
-constructor TbtkEventHandlers.Create(AEventClassType: TbtkEventObjectClass);
+constructor TbtkEventHandlers.Create;
 begin
   inherited Create;
-//  FEventObjectClass := AEventClassType;
-  FHookList := TbtkHookList.Create(True);
+  FHookList := TbtkHookList.Create;
   FHandlerLists := TbtkHandlerDictionary.Create([doOwnsValues]);
 end;
 
@@ -805,24 +999,24 @@ end;
 
 procedure TbtkEventHandlers.HashingStringChanged(ASender: TObject; AOldValue: string);
 var
-  eventHandler: TbtkEventHandler;
+  eventHandler: IbtkEventHandler;
 begin
   eventHandler := HandlerLists[AOldValue].Extract(TbtkEventHandler(ASender));
   if HandlerLists[AOldValue].Count = 0 then
     HandlerLists.Remove(AOldValue);
   if not HandlerLists.ContainsKey(eventHandler.Filters.HashingString) then
-    HandlerLists.Add(eventHandler.Filters.HashingString, TObjectList<TbtkEventHandler>.Create(True));
+    HandlerLists.Add(eventHandler.Filters.HashingString, TbtkHandlerList.Create);
   HandlerLists[eventHandler.Filters.HashingString].Add(eventHandler);
 end;
 
 { TbtkEventBus }
 
-procedure TbtkEventBus.AddFromListener(AEventObjectClass: TbtkEventObjectClass; AListenerInfo: TbtkListenerInfo);
+procedure TbtkCustomEventBus.AddFromListener(AEventObjectClass: TbtkEventObjectClass; AListenerInfo: TbtkListenerInfo);
 var
   eventHashingString: string;
   eventHandler: TbtkEventHandler;
   eventHook: TbtkEventHook;
-  handlerList: TObjectList<TbtkEventHandler>;
+  handlerList: TbtkHandlerList;
 begin
   if AListenerInfo.HandlerMethods.ContainsKey(AEventObjectClass) then
   begin
@@ -834,7 +1028,7 @@ begin
     eventHashingString := AListenerInfo.HandlerFilters[AEventObjectClass].HashingString;
     if not FEventHandlers[AEventObjectClass].HandlerLists.TryGetValue(eventHashingString, handlerList) then
     begin
-      handlerList := TObjectList<TbtkEventHandler>.Create(True);
+      handlerList := TbtkHandlerList.Create;
       FEventHandlers[AEventObjectClass].HandlerLists.Add(eventHashingString, handlerList);
     end;
     handlerList.Add(eventHandler);
@@ -847,11 +1041,12 @@ begin
   end;
 end;
 
-procedure TbtkEventBus.RemoveFromListener(AEventObjectClass: TbtkEventObjectClass; AListenerInfo: TbtkListenerInfo);
+procedure TbtkCustomEventBus.RemoveFromListener(AEventObjectClass: TbtkEventObjectClass; AListenerInfo: TbtkListenerInfo);
 var
   i: Integer;
   eventHashingString: string;
-  handlerList: TObjectList<TbtkEventHandler>;
+  handlerList: TbtkHandlerList;
+  handler: IbtkCustomEventHandler;
 begin
   if AListenerInfo.HandlerMethods.ContainsKey(AEventObjectClass) then
   begin
@@ -861,7 +1056,16 @@ begin
     begin
       if handlerList[i].Listener = AListenerInfo.Listener then
       begin
-        handlerList.Delete(i);
+        handler := handlerList[i];
+        if handler.Lock(ThreadLockWaitingTimeout) then
+        try
+          handler.Extracted := True;
+          handlerList.Delete(i);
+        finally
+          handler.Unlock;
+        end
+        else
+          raise Exception.Create('Could not lock handler');
         if handlerList.Count = 0 then
           FEventHandlers[AEventObjectClass].HandlerLists.Remove(eventHashingString);
         Break;
@@ -873,51 +1077,62 @@ begin
     for i := FEventHandlers[AEventObjectClass].HookList.Count - 1 downto 0 do
       if FEventHandlers[AEventObjectClass].HookList[i].Listener = AListenerInfo.Listener then
       begin
-        FEventHandlers[AEventObjectClass].HookList.Delete(i);
+        handler := FEventHandlers[AEventObjectClass].HookList[i];
+        if handler.Lock(ThreadLockWaitingTimeout) then
+        try
+          handler.Extracted := True;
+          FEventHandlers[AEventObjectClass].HookList.Delete(i);
+        finally
+          handler.Unlock;
+        end
+        else
+          raise Exception.Create('Could not lock handler');
         Break;
       end;
 end;
 
-class constructor TbtkEventBus.Create;
+class constructor TbtkCustomEventBus.Create;
 begin
-  FEventBusDictionary := TDictionary<TEventBusName, TbtkEventBus>.Create;
+  FEventBusDictionary := TDictionary<TEventBusName, TbtkCustomEventBus>.Create;
 end;
 
-class destructor TbtkEventBus.Destroy;
+class destructor TbtkCustomEventBus.Destroy;
 begin
   FEventBusDictionary.Free;
 end;
 
-class function TbtkEventBus.GetEventBus(AName: TEventBusName): IbtkEventBus;
+class function TbtkCustomEventBus.GetEventBus(AName: TEventBusName): IbtkEventBus;
 var
-  eventBus: TbtkEventBus;
+  eventBus: TbtkCustomEventBus;
 begin
   if not FEventBusDictionary.TryGetValue(AName, eventBus) then
   begin
-    eventBus := TbtkEventBus.Create;
+    eventBus := Self.Create;
     eventBus.FName := AName;
     FEventBusDictionary.Add(AName, eventBus);
   end;
+  if not(eventBus is Self) then
+    raise Exception.Create('Incorrectly specified class of eventbus');
   Result := eventBus;
 end;
 
-constructor TbtkEventBus.Create;
+constructor TbtkCustomEventBus.Create;
 begin
   inherited Create;
   FListenersInfo := TObjectDictionary<TObject, TbtkListenerInfo>.Create([doOwnsValues]);
   FEventHandlers := TObjectDictionary<TbtkEventObjectClass, TbtkEventHandlers>.Create([doOwnsValues]);
 end;
 
-destructor TbtkEventBus.Destroy;
+destructor TbtkCustomEventBus.Destroy;
 begin
-  if TbtkEventBus.FEventBusDictionary.ContainsKey(FName) then
-    TbtkEventBus.FEventBusDictionary.Remove(FName);
+  if TbtkCustomEventBus.FEventBusDictionary.ContainsKey(FName) then
+    TbtkCustomEventBus.FEventBusDictionary.Remove(FName);
   FListenersInfo.Free;
   FEventHandlers.Free;
   inherited Destroy;
 end;
 
-procedure TbtkEventBus.Send(AEventObject: IbtkEventObject; AExceptionHandler: TbtkEventExceptionHandler);
+procedure TbtkCustomEventBus.Send(AEventObject: IbtkEventObject; AExceptionHandler: TbtkEventExceptionHandler);
   function FiltersMatch(AEventFilters: TbtkEventFilters; AHandlerFilters: TbtkEventFilters): Boolean;
   var
     i: Integer;
@@ -938,7 +1153,7 @@ procedure TbtkEventBus.Send(AEventObject: IbtkEventObject; AExceptionHandler: Tb
   end;
 
   procedure SafeInvoke(AEventObject: IbtkEventObject;
-    AEventHandler: TbtkCustomEventHandler; AExceptionHandler: TbtkEventExceptionHandler);
+    AEventHandler: IbtkCustomEventHandler; AExceptionHandler: TbtkEventExceptionHandler);
   begin
     try
       AEventHandler.Invoke(AEventObject);
@@ -959,17 +1174,19 @@ var
   eventClass: TbtkEventObjectClass;
   eventFilters: TbtkEventFilters;
   eventHandlers: TbtkEventHandlers;
-  eventHandlerList: TObjectList<TbtkEventHandler>;
+  eventHandlerList: TbtkHandlerList;
 
-  hooks: TList<TbtkEventHook>;
-  handlers: TList<TbtkEventHandler>;
+  hooks: TbtkHookList;
+  handlers: TbtkHandlerList;
+
+  handlerEnumerator: TbtkEeventHandlerEnumerator;
 
 begin
   if not(AEventObject.Instance is TbtkEventObject) then
     raise Exception.Create('Event object must be inherits from TbtkEventObject class');
 
-  hooks := TList<TbtkEventHook>.Create;
-  handlers := TList<TbtkEventHandler>.Create;
+  hooks := TbtkHookList.Create;
+  handlers := TbtkHandlerList.Create;
   try
 
     eventClass := TbtkEventObjectClass(AEventObject.Instance.ClassType);
@@ -993,20 +1210,27 @@ begin
     end;
 
     hooks.Sort(TbtkEventHookComparer.Create);
-    for i := hooks.Count - 1 downto 0 do
-      SafeInvoke(AEventObject, hooks[i], AExceptionHandler);
+    handlerEnumerator := TbtkEeventHandlerEnumerator.Create;
+    try
+      for i := hooks.Count -1 downto 0 do
+        handlerEnumerator.AddHandler(hooks[i]);
 
-    for i := handlers.Count - 1 downto 0 do
-      SafeInvoke(AEventObject, handlers[i], AExceptionHandler);
+      for i := handlers.Count - 1 downto 0 do
+        handlerEnumerator.AddHandler(handlers[i]);
+
+      InternalSend(AEventObject, handlerEnumerator, AExceptionHandler);
+    except
+      handlerEnumerator.Free;
+      raise;
+    end;
 
   finally
     hooks.Free;
     handlers.Free;
   end;
-
 end;
 
-function TbtkEventBus.Register(AListener: TObject): TbtkListenerInfo;
+function TbtkCustomEventBus.Register(AListener: TObject): TbtkListenerInfo;
 var
   i: Integer;
   handlerClasses: TArray<TbtkEventObjectClass>;
@@ -1027,7 +1251,7 @@ begin
     for i := 0 to eventObjectClassList.Count - 1 do
     begin
       if not FEventHandlers.ContainsKey(eventObjectClassList[i]) then
-        FEventHandlers.Add(eventObjectClassList[i], TbtkEventHandlers.Create(eventObjectClassList[i]));
+        FEventHandlers.Add(eventObjectClassList[i], TbtkEventHandlers.Create);
       AddFromListener(eventObjectClassList[i], FListenersInfo[AListener]);
     end;
   finally
@@ -1036,7 +1260,7 @@ begin
   Result := FListenersInfo[AListener];
 end;
 
-procedure TbtkEventBus.UnRegister(AListener: TObject);
+procedure TbtkCustomEventBus.UnRegister(AListener: TObject);
 var
   i: Integer;
   handlerClasses: TArray<TbtkEventObjectClass>;
@@ -1064,6 +1288,61 @@ begin
     eventObjectClassList.Free;
   end;
   FListenersInfo.Remove(AListener);
+end;
+
+{ TbtkCustomEventSender }
+
+procedure TbtkCustomEventSender.DoExecuteHandlers(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator;
+  AExceptionHandler: TbtkEventExceptionHandler);
+var
+  handler: IbtkCustomEventHandler;
+begin
+  while AHandlerEnumerator.MoveNext do
+  try
+    handler := AHandlerEnumerator.Current;
+    handler.Lock(ThreadLockWaitingTimeout);
+    try
+      if not handler.Extracted then
+        handler.Invoke(AEventObject);
+    finally
+      handler.Unlock;
+    end;
+  except
+    on E: Exception do
+    begin
+      if Assigned(AExceptionHandler) then
+        AExceptionHandler(E)
+      else
+        ApplicationHandleException(Self);
+    end;
+  end;
+end;
+
+{ TbtkEventBus<T> }
+
+constructor TbtkEventBus<T>.Create;
+begin
+  inherited;
+  FEventSender := T.Create;
+end;
+
+destructor TbtkEventBus<T>.Destroy;
+begin
+  FEventSender := nil;
+  inherited;
+end;
+
+procedure TbtkEventBus<T>.InternalSend(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator; AExceptionHandler: TbtkEventExceptionHandler);
+begin
+  FEventSender.Send(AEventObject, AHandlerEnumerator, AExceptionHandler);
+end;
+
+{ TbtkSyncEventSender }
+
+procedure TbtkSyncEventSender.Send(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator;
+  AExceptionHandler: TbtkEventExceptionHandler);
+begin
+  DoExecuteHandlers(AEventObject, AHandlerEnumerator, AExceptionHandler);
 end;
 
 end.
