@@ -20,9 +20,6 @@ uses
   System.TypInfo,
   System.Rtti;
 
-const
-  bIsPartOfHashingString = True;
-
 type
 
   /// <summary>EventHookAttribute
@@ -34,25 +31,33 @@ type
   /// </summary>
   EventHandlerAttribute = class(TCustomAttribute);
 
+  /// <summary>TEventFilterProperties
+  /// Properties of eventfilter.
+  /// <value><b>efpIsPartOfHashingString</b> - this property is responsible for adding the filter in a hash.
+  /// Using filters as a hash to reduce handler-lists. This provides faster calling handlers,
+  /// but forbids the use of empty values for hashed filters of listeners.</value>
+  /// <value><b>efpCaseSensitive</b> - This property determines how the filter values will be compared.</value>
+  /// </summary>
+  TEventFilterProperties = set of (efpIsPartOfHashingString, efpCaseSensitive);
+
   /// <summary>EventFilterAttribute
   /// Attribute for annotating method of event-object as filter.
   /// </summary>
   EventFilterAttribute = class(TCustomAttribute)
   private
     FName: string;
-    FIsPartOfHashingString: Boolean;
+    FProperties: TEventFilterProperties;
   public
     /// <summary>EventFilterAttribute.Name
     /// Used to identify filter. Must be unique for each filter of event.
     /// </summary>
     property Name: string read FName;
-    /// <summary>EventFilterAttribute.IsPartOfHashingString
-    /// This property is responsible for adding the filter in a hash.
-    /// Using filters as a hash to reduce handler-lists. This provides faster calling handlers,
-    /// but forbids the use of empty values for hashed filters of listeners.
+    /// <summary>EventFilterAttribute.Properties
+    /// Contains the properties of the filter.
+    /// See description of TEventFilterProperties for more info about filter properties.
     /// </summary>
-    property IsPartOfHashingString: Boolean read FIsPartOfHashingString;
-    constructor Create(AName: string; AIsPartOfHashingString: Boolean = not bIsPartOfHashingString);
+    property Properties: TEventFilterProperties read FProperties;
+    constructor Create(AName: string; AProperties: TEventFilterProperties = []);
   end;
 
   TbtkEventObject = class;
@@ -94,7 +99,7 @@ type
     /// Returns the value of the hashed filter "Topic". "Topic" is a basic filter
     /// that allows you to distribute the events in their context.
     /// </summary>
-    [EventFilter(sEventFilterTopicName, bIsPartOfHashingString)]
+    [EventFilter(sEventFilterTopicName, [efpIsPartOfHashingString])]
     function Topic: string;
   end;
 
@@ -104,23 +109,23 @@ type
   TbtkEventFilterInfo = record
   strict private
     FFilterName: string;
-    FIsPartOfHashingString: Boolean;
+    FProperties: TEventFilterProperties;
     FMethod: TRttiMethod;
   public
     /// <summary>TbtkEventFilterInfo.Create
     /// <param name="AFilterName">value of the annotation property "EventFilterAttribute.Name".</param>
-    /// <param name="AIsPartOfHashingString">value of the annotation property "EventFilterAttribute.IsPartOfHashingString".</param>
+    /// <param name="AProperties">value of the annotation property "EventFilterAttribute.Properties".</param>
     /// <param name="AMethod">Link to a describer of the method, that returns value of filter.</param>
     /// </summary>
-    constructor Create(AFilterName: string; AIsPartOfHashingString: Boolean; AMethod: TRttiMethod);
+    constructor Create(AFilterName: string; AProperties: TEventFilterProperties; AMethod: TRttiMethod);
     /// <summary>TbtkEventFilterInfo.FilterName
     /// Contains the value of the annotation property "EventFilterAttribute.Name".
     /// </summary>
     property FilterName: string read FFilterName;
-    /// <summary>TbtkEventFilterInfo.IsPartOfHashingString
-    /// Contains the value of the annotation property "EventFilterAttribute.IsPartOfHashingString".
+    /// <summary>TbtkEventFilterInfo.Properties
+    /// Contains the value of the annotation property "EventFilterAttribute.Properties".
     /// </summary>
-    property IsPartOfHashingString: Boolean read FIsPartOfHashingString;
+    property Properties: TEventFilterProperties read FProperties;
     /// <summary>TbtkEventFilterInfo.GetValueFor
     /// Returns filter value for instance of event-object.
     /// </summary>
@@ -186,8 +191,9 @@ type
   /// </summary>
   TbtkEventFilter = class
   private
-    FIsPartOfHashingString: Boolean;
+    FProperties: TEventFilterProperties;
     FValue: string;
+    FNormalizedValue: string;
     FOnValueChanged: TNotifyEvent;
     procedure SetValue(const AValue: string);
   protected
@@ -195,13 +201,14 @@ type
     /// It's necessary for call hash recalculating, when hashed filter value is changed.
     /// </summary>
     property OnValueChanged: TNotifyEvent read FOnValueChanged write FOnValueChanged;
+    property NormalizedValue: string read FNormalizedValue;
   public
-    constructor Create(AIsPartOfHashingString: Boolean; AValue: string);
-    /// <summary>TbtkEventFilter.IsPartOfHashingString
-    /// See description of EventFilterAttribute.IsPartOfHashingString for more
-    /// info about the hashed filters.
+    constructor Create(AProperties: TEventFilterProperties; AValue: string);
+    /// <summary>TbtkEventFilter.Properties
+    /// See description of EventFilterAttribute.Properties for more
+    /// info about the filter properties.
     /// </summary>
-    property IsPartOfHashingString: Boolean read FIsPartOfHashingString;
+    property Properties: TEventFilterProperties read FProperties;
     /// <summary>TbtkEventFilter.Value
     /// Value of the filter.
     /// </summary>
@@ -232,8 +239,7 @@ type
   public
     constructor Create(AEventObjectClass: TbtkEventObjectClass; AEventObject: TbtkEventObject = nil);
     /// <summary>TbtkEventFilters.HashingString
-    /// See description of EventFilterAttribute.IsPartOfHashingString for more
-    /// info about the hashed filters.
+    /// See description of TEventFilterSetting for more info about the hashed filters.
     /// </summary>
     property HashingString: string read FHashingString;
     property Filters[AName: string]: TbtkEventFilter read GetFilters; default;
@@ -563,13 +569,21 @@ begin
   Result := LowerCase(AFilterName);
 end;
 
+function NormalizeFilterValue(AFilterValue: string; ACaseSensitive: Boolean): string;
+begin
+  if ACaseSensitive then
+    Result := AFilterValue
+  else
+    Result := LowerCase(AFilterValue);
+end;
+
 { EventFilterAttribute }
 
-constructor EventFilterAttribute.Create(AName: string; AIsPartOfHashingString: Boolean);
+constructor EventFilterAttribute.Create(AName: string; AProperties: TEventFilterProperties);
 begin
   inherited Create;
   FName := AName;
-  FIsPartOfHashingString := AIsPartOfHashingString;
+  FProperties := AProperties;
 end;
 
 { TbtkEventObject }
@@ -592,11 +606,11 @@ end;
 
 { TbtkEventFilterInfo }
 
-constructor TbtkEventFilterInfo.Create(AFilterName: string; AIsPartOfHashingString: Boolean;
+constructor TbtkEventFilterInfo.Create(AFilterName: string; AProperties: TEventFilterProperties;
   AMethod: TRttiMethod);
 begin
   FFilterName := AFilterName;
-  FIsPartOfHashingString := AIsPartOfHashingString;
+  FProperties := AProperties;
   FMethod := AMethod;
 end;
 
@@ -642,7 +656,7 @@ begin
             eventFilterInfoList.Add(
               TbtkEventFilterInfo.Create(
                 EventFilterAttribute(rMethodAttributes[j]).Name,
-                EventFilterAttribute(rMethodAttributes[j]).IsPartOfHashingString,
+                EventFilterAttribute(rMethodAttributes[j]).Properties,
                 rMethods[i]));
       end;
 
@@ -740,14 +754,16 @@ end;
 procedure TbtkEventFilter.SetValue(const AValue: string);
 begin
   FValue := AValue;
+  FNormalizedValue := NormalizeFilterValue(FValue, efpCaseSensitive in Properties);
   if Assigned(FOnValueChanged) then
     FOnValueChanged(Self);
 end;
 
-constructor TbtkEventFilter.Create(AIsPartOfHashingString: Boolean; AValue: string);
+constructor TbtkEventFilter.Create(AProperties: TEventFilterProperties; AValue: string);
 begin
-  FIsPartOfHashingString := AIsPartOfHashingString;
-  FValue := AValue;
+  //Properties must be set befor Value
+  FProperties := AProperties;
+  SetValue(AValue);
 end;
 
 { TEventFilters }
@@ -763,8 +779,9 @@ begin
   for i := 0 to Length(filterPairs) - 1 do
   begin
     eventFilter := filterPairs[i].Value;
-    if eventFilter.IsPartOfHashingString then
-      FHashingString := Format('%s%s=%s;', [FHashingString, NormalizeFilterName(filterPairs[i].Key), eventFilter.Value]);
+    if efpIsPartOfHashingString in eventFilter.Properties then
+      FHashingString := Format('%s%s=%s;', [FHashingString, NormalizeFilterName(filterPairs[i].Key),
+        eventFilter.NormalizedValue]);
   end;
 end;
 
@@ -772,12 +789,13 @@ procedure TbtkEventFilters.FilterValueChanged(ASender: TObject);
 var
   oldHashingString: string;
 begin
-  if TbtkEventFilter(ASender).IsPartOfHashingString then
+  if efpIsPartOfHashingString in TbtkEventFilter(ASender).Properties then
   begin
     oldHashingString := HashingString;
     UpdateHashingString;
-    if Assigned(FHashingStringChanged) then
-      FHashingStringChanged(Self, oldHashingString);
+    if oldHashingString <> HashingString then
+      if Assigned(FHashingStringChanged) then
+        FHashingStringChanged(Self, oldHashingString);
   end;
 end;
 
@@ -810,7 +828,7 @@ begin
     else
       filterValue := EmptyStr;
     Add(NormalizeFilterName(filtersInfo[i].FilterName),
-      TbtkEventFilter.Create(filtersInfo[i].IsPartOfHashingString, filterValue));
+      TbtkEventFilter.Create(filtersInfo[i].Properties, filterValue));
   end;
   UpdateHashingString;
 end;
@@ -1145,9 +1163,9 @@ procedure TbtkCustomEventBus.Send(AEventObject: IbtkEventObject; AExceptionHandl
     begin
       eventFilter := AEventFilters[filterNames[i]];
       handlerFilter := AHandlerFilters[filterNames[i]];
-      if (not eventFilter.IsPartOfHashingString) and
+      if not(efpIsPartOfHashingString in eventFilter.Properties) and
         (handlerFilter.Value <> EmptyStr) and
-        (handlerFilter.Value <> eventFilter.Value) then
+        (handlerFilter.NormalizedValue <> eventFilter.NormalizedValue) then
         Exit(False);
     end;
   end;

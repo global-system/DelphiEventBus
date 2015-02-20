@@ -22,9 +22,9 @@ type
     constructor Create(ATopic: string; AHashedTestFilter: string;
       ANotHashedTestFilter: string);
 
-    [EventFilter(sEventHashedTestFilterName, bIsPartOfHashingString)]
+    [EventFilter(sEventHashedTestFilterName, [efpIsPartOfHashingString])]
     function HashedTestFilter: string;
-    [EventFilter(sEventNotHashedTestFilterName, not bIsPartOfHashingString)]
+    [EventFilter(sEventNotHashedTestFilterName)]
     function NotHashedTestFilter: string;
   end;
 
@@ -42,6 +42,32 @@ type
     function NotHashedTestFilter2: string;
   end;
 
+  TbtkCaseSensitiveTestEventObject = class(TbtkEventObject)
+  private
+    FHashedCaseSensitiveTestFilter: string;
+    FHashedNotCaseSensitiveTestFilter: string;
+    FNotHashedCaseSensitiveTestFilter: string;
+    FNotHashedNotCaseSensitiveTestFilter: string;
+  public
+    const sEventHashedCaseSensitiveTestFilterName = 'HashedCaseSensitiveTestFilter';
+    const sEventHashedNotCaseSensitiveTestFilterName = 'HashedNotCaseSensitiveTestFilter';
+    const sEventNotHashedCaseSensitiveTestFilterName = 'NotHashedCaseSensitiveTestFilter';
+    const sEventNotHashedNotCaseSensitiveTestFilterName = 'NotHashedNotCaseSensitiveTestFilter';
+
+    constructor Create(ATopic: string; AHashedCaseSensitiveTestFilter: string;
+      AHashedNotCaseSensitiveTestFilter: string; ANotHashedCaseSensitiveTestFilter: string;
+      ANotHashedNotCaseSensitiveTestFilter: string);
+
+    [EventFilter(sEventHashedCaseSensitiveTestFilterName, [efpIsPartOfHashingString, efpCaseSensitive])]
+    function HashedCaseSensitiveTestFilter: string;
+    [EventFilter(sEventHashedNotCaseSensitiveTestFilterName, [efpIsPartOfHashingString])]
+    function HashedNotCaseSensitiveTestFilter: string;
+    [EventFilter(sEventNotHashedCaseSensitiveTestFilterName, [efpCaseSensitive])]
+    function NotHashedCaseSensitiveTestFilter: string;
+    [EventFilter(sEventNotHashedNotCaseSensitiveTestFilterName)]
+    function NotHashedNotCaseSensitiveTestFilter: string;
+  end;
+
   TbtkTestEventListener = class
   public
     [EventHandler]
@@ -52,6 +78,8 @@ type
     procedure Hook(AEventObject: TbtkTestEventObject); virtual; abstract;
     [EventHook]
     procedure HookForParentClass(AEventObject: TbtkCustomTestEventObject); virtual; abstract;
+    [EventHandler]
+    procedure CaseSensitiveHandler(AEventObject: TbtkCaseSensitiveTestEventObject); virtual; abstract;
   end;
 
   TbtkTestInvalidEventListener = class
@@ -132,6 +160,14 @@ type
     procedure Send_ExceptionRaisedInEachHooksAndHandlersRaisedAnException_AllHooksAndHandlersCalled;
     [Test]
     procedure Send_1Event3Listeners_EachHandlerCalledOnce;
+    [Test]
+    procedure Send_HashedCaseSensitiveFilterOfListenerDifferentCaseWithParametersOfEvent_HandlerNotCalled;
+    [Test]
+    procedure Send_HashedNotCaseSensitiveFilterOfListenerDifferentCaseWithParametersOfEvent_HandlerCalled;
+    [Test]
+    procedure Send_NotHashedCaseSensitiveFilterOfListenerDifferentCaseWithParametersOfEvent_HandlerNotCalled;
+    [Test]
+    procedure Send_NotHashedNotCaseSensitiveFilterOfListenerDifferentCaseWithParametersOfEvent_HandlerCalled;
   end;
 
   TbtkEventFiltersTest = class(TObject)
@@ -191,6 +227,39 @@ end;
 function TbtkTestEventObject.NotHashedTestFilter2: string;
 begin
   Result := FNotHashedTestFilter2;
+end;
+
+{ TbtkCaseSensitiveTestEventObject }
+
+constructor TbtkCaseSensitiveTestEventObject.Create(ATopic: string; AHashedCaseSensitiveTestFilter: string;
+  AHashedNotCaseSensitiveTestFilter: string; ANotHashedCaseSensitiveTestFilter: string;
+  ANotHashedNotCaseSensitiveTestFilter: string);
+begin
+  inherited Create(ATopic);
+  FHashedCaseSensitiveTestFilter := AHashedCaseSensitiveTestFilter;
+  FHashedNotCaseSensitiveTestFilter := AHashedNotCaseSensitiveTestFilter;
+  FNotHashedCaseSensitiveTestFilter := ANotHashedCaseSensitiveTestFilter;
+  FNotHashedNotCaseSensitiveTestFilter := ANotHashedNotCaseSensitiveTestFilter;
+end;
+
+function TbtkCaseSensitiveTestEventObject.HashedCaseSensitiveTestFilter: string;
+begin
+  Result := FHashedCaseSensitiveTestFilter;
+end;
+
+function TbtkCaseSensitiveTestEventObject.HashedNotCaseSensitiveTestFilter: string;
+begin
+  Result := FHashedNotCaseSensitiveTestFilter;
+end;
+
+function TbtkCaseSensitiveTestEventObject.NotHashedCaseSensitiveTestFilter: string;
+begin
+  Result := FNotHashedCaseSensitiveTestFilter;
+end;
+
+function TbtkCaseSensitiveTestEventObject.NotHashedNotCaseSensitiveTestFilter: string;
+begin
+  Result := FNotHashedNotCaseSensitiveTestFilter;
 end;
 
 { TbtkEventBusTest }
@@ -587,6 +656,66 @@ begin
       Listeners[i].Verify;
   finally
     UnRegisterListeners;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_HashedCaseSensitiveFilterOfListenerDifferentCaseWithParametersOfEvent_HandlerNotCalled;
+begin
+  RegisterListener;
+  try
+    ListenerInfo.HandlerFilters[TbtkCaseSensitiveTestEventObject][TbtkCaseSensitiveTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
+    ListenerInfo.HandlerFilters[TbtkCaseSensitiveTestEventObject][TbtkCaseSensitiveTestEventObject.sEventHashedCaseSensitiveTestFilterName].Value := 'HashedCaseSensitiveTestFilterValue';
+
+    Listener.Setup.Expect.Never('CaseSensitiveHandler');
+    EventBus.Send(TbtkCaseSensitiveTestEventObject.Create('TopicValue', 'hasheDcasEsensitivEtesTfilteRvaluE', '', '', ''));
+    Listener.Verify;
+  finally
+    UnRegisterListener;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_HashedNotCaseSensitiveFilterOfListenerDifferentCaseWithParametersOfEvent_HandlerCalled;
+begin
+  RegisterListener;
+  try
+    ListenerInfo.HandlerFilters[TbtkCaseSensitiveTestEventObject][TbtkCaseSensitiveTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
+    ListenerInfo.HandlerFilters[TbtkCaseSensitiveTestEventObject][TbtkCaseSensitiveTestEventObject.sEventHashedNotCaseSensitiveTestFilterName].Value := 'HashedNotCaseSensitiveTestFilterValue';
+
+    Listener.Setup.Expect.Once('CaseSensitiveHandler');
+    EventBus.Send(TbtkCaseSensitiveTestEventObject.Create('TopicValue', '', 'hasheDnoTcasEsensitivEtesTfilteRvaluE', '', ''));
+    Listener.Verify;
+  finally
+    UnRegisterListener;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_NotHashedCaseSensitiveFilterOfListenerDifferentCaseWithParametersOfEvent_HandlerNotCalled;
+begin
+  RegisterListener;
+  try
+    ListenerInfo.HandlerFilters[TbtkCaseSensitiveTestEventObject][TbtkCaseSensitiveTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
+    ListenerInfo.HandlerFilters[TbtkCaseSensitiveTestEventObject][TbtkCaseSensitiveTestEventObject.sEventNotHashedCaseSensitiveTestFilterName].Value := 'NotHashedCaseSensitiveTestFilterValue';
+
+    Listener.Setup.Expect.Never('CaseSensitiveHandler');
+    EventBus.Send(TbtkCaseSensitiveTestEventObject.Create('TopicValue', '', '', 'noThasheDcasEsensitivEtesTfilteRvaluE', ''));
+    Listener.Verify;
+  finally
+    UnRegisterListener;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_NotHashedNotCaseSensitiveFilterOfListenerDifferentCaseWithParametersOfEvent_HandlerCalled;
+begin
+  RegisterListener;
+  try
+    ListenerInfo.HandlerFilters[TbtkCaseSensitiveTestEventObject][TbtkCaseSensitiveTestEventObject.sEventFilterTopicName].Value := 'TopicValue';
+    ListenerInfo.HandlerFilters[TbtkCaseSensitiveTestEventObject][TbtkCaseSensitiveTestEventObject.sEventNotHashedNotCaseSensitiveTestFilterName].Value := 'NotHashedNotCaseSensitiveTestFilterValue';
+
+    Listener.Setup.Expect.Once('CaseSensitiveHandler');
+    EventBus.Send(TbtkCaseSensitiveTestEventObject.Create('TopicValue', '', '', '', 'noThasheDnoTcasEsensitivEtesTfilteRvaluE'));
+    Listener.Verify;
+  finally
+    UnRegisterListener;
   end;
 end;
 
