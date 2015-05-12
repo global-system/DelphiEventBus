@@ -564,6 +564,9 @@ var
 
 implementation
 
+var
+  RttiContext: TRttiContext;
+
 function NormalizeFilterName(AFilterName: string): string;
 begin
   Result := LowerCase(AFilterName);
@@ -634,7 +637,6 @@ end;
 class function TbtkEventFiltersRTTIInfo.GetInfoFor(AEventObjectClass: TEventObjectClass): TEventFilterInfoList;
 var
   i, j: Integer;
-  rContext: TRttiContext;
   rMethods: TArray<TRttiMethod>;
   rMethodAttributes: TArray<TCustomAttribute>;
   eventFilterInfoList: TEventFilterInfoList;
@@ -644,24 +646,17 @@ begin
   begin
     FEventsFilterDictionary.Add(AEventObjectClass, TEventFilterInfoList.Create);
     eventFilterInfoList := FEventsFilterDictionary[AEventObjectClass];
-
-    rContext := TRttiContext.Create;
-    try
-      rMethods := rContext.GetType(AEventObjectClass).GetMethods;
-      for i := 0 to Length(rMethods) - 1 do
-      begin
-        rMethodAttributes := rMethods[i].GetAttributes;
-        for j := 0 to Length(rMethodAttributes) - 1 do
-          if rMethodAttributes[j] is EventFilterAttribute then
-            eventFilterInfoList.Add(
-              TbtkEventFilterInfo.Create(
-                EventFilterAttribute(rMethodAttributes[j]).Name,
+    rMethods := RttiContext.GetType(AEventObjectClass).GetMethods;
+    for i := 0 to Length(rMethods) - 1 do
+    begin
+      rMethodAttributes := rMethods[i].GetAttributes;
+      for j := 0 to Length(rMethodAttributes) - 1 do
+        if rMethodAttributes[j] is EventFilterAttribute then
+          eventFilterInfoList.Add(
+            TbtkEventFilterInfo.Create(
+              EventFilterAttribute(rMethodAttributes[j]).Name,
                 EventFilterAttribute(rMethodAttributes[j]).Properties,
-                rMethods[i]));
-      end;
-
-    finally
-      rContext.Free;
+              rMethods[i]));
     end;
   end;
   Result := eventFilterInfoList;
@@ -701,7 +696,6 @@ end;
 class function TbtkEventHandlersRTTIInfo.GetInfoFor(AListenerClass: TListenerClass): TbtkEventHandlersRTTIInfo;
 var
   i, j: Integer;
-  rContext: TRttiContext;
   rMethods: TArray<TRttiMethod>;
   rMethodAttributes: TArray<TCustomAttribute>;
   handlerMethods: TEventHandlerMethodDictionary;
@@ -712,30 +706,25 @@ begin
   begin
     handlerMethods := TEventHandlerMethodDictionary.Create;
     hookMethods := TEventHandlerMethodDictionary.Create;
-    rContext := TRttiContext.Create;
-    try
-      rMethods := rContext.GetType(AListenerClass).GetMethods;
-      for i := 0 to Length(rMethods) - 1 do
-      begin
-        rMethodAttributes := rMethods[i].GetAttributes;
-        for j := 0 to Length(rMethodAttributes) - 1 do
-        try
-          if rMethodAttributes[j] is EventHandlerAttribute then
-            handlerMethods.Add(GetEventHandlerParameterType(rMethods[i]), rMethods[i])
-          else
-            if rMethodAttributes[j] is EventHookAttribute then
-              hookMethods.Add(GetEventHandlerParameterType(rMethods[i]), rMethods[i]);
-        except
-          handlerMethods.Free;
-          hookMethods.Free;
-          raise;
-        end;
+    rMethods := RttiContext.GetType(AListenerClass).GetMethods;
+    for i := 0 to Length(rMethods) - 1 do
+    begin
+      rMethodAttributes := rMethods[i].GetAttributes;
+      for j := 0 to Length(rMethodAttributes) - 1 do
+      try
+        if rMethodAttributes[j] is EventHandlerAttribute then
+          handlerMethods.Add(GetEventHandlerParameterType(rMethods[i]), rMethods[i])
+        else
+          if rMethodAttributes[j] is EventHookAttribute then
+            hookMethods.Add(GetEventHandlerParameterType(rMethods[i]), rMethods[i]);
+      except
+        handlerMethods.Free;
+        hookMethods.Free;
+        raise;
       end;
-      FEventsHandlerDictionary.Add(AListenerClass, handlerMethods);
-      FEventsHookDictionary.Add(AListenerClass, hookMethods);
-    finally
-      rContext.Free;
     end;
+    FEventsHandlerDictionary.Add(AListenerClass, handlerMethods);
+    FEventsHookDictionary.Add(AListenerClass, hookMethods);
   end;
 end;
 
@@ -1362,5 +1351,11 @@ procedure TbtkSyncEventSender.Send(AEventObject: IbtkEventObject; AHandlerEnumer
 begin
   DoExecuteHandlers(AEventObject, AHandlerEnumerator, AExceptionHandler);
 end;
+
+initialization
+  RttiContext := TRttiContext.Create;
+
+finalization
+  RttiContext.Free;
 
 end.
