@@ -92,3 +92,106 @@ EventBus предназначен для обеспечения взаимоде
 	//listener unregistration
 	  EventBus.Unregister(FooListener);
 ```
+###Minimalistic example of use eventhook
+```delphi
+	program EventHookExample;
+
+        {$APPTYPE CONSOLE}
+
+        uses
+          System.SysUtils,
+          btkEventBus;
+
+        type
+          TFooEventListener = class
+          public
+            [EventHook] //hook declaration
+            procedure FooHook(EventObject: TbtkEventObject);
+          end;
+
+        { TFooEventListener }
+
+        //hook implementation
+        procedure TFooEventListener.FooHook(EventObject: TbtkEventObject);
+        begin
+          Writeln(Format('======'#13#10'Event with topic "%s" sended', [EventObject.Topic]));
+        end;
+
+        var
+          FooEventBus: IbtkEventBus;
+          FooEventListener: TFooEventListener;
+          FooTopicName: string;
+        begin
+          //get eventbus
+          FooEventBus := TbtkEventBus.GetEventBus('FooEventBus');
+
+          FooEventListener := TFooEventListener.Create;
+          try
+            //register listener
+            FooEventBus.Register(FooEventListener);
+
+            Write('Write topic: ');
+            ReadLn(FooTopicName);
+
+            //create and send event
+            FooEventBus.Send(TbtkEventObject.Create(FooTopicName));
+          finally
+            FooEventListener.Free;
+            FooEventBus := nil;
+          end;
+          Readln;
+        end.
+```
+###Minimalistic example of use eventhandler
+```delphi
+	program EventHookExample;
+
+        {$APPTYPE CONSOLE}
+
+        uses
+          System.SysUtils,
+          btkEventBus;
+
+        type
+          TFooEventListener = class
+          public
+            [EventHandler] //handler declaration
+            procedure FooHandler(EventObject: TbtkEventObject);
+          end;
+
+        { TFooEventListener }
+
+        //handler implementation
+        procedure TFooEventListener.FooHandler(EventObject: TbtkEventObject);
+        begin
+          Writeln(Format('Event with topic "%s" sended', [EventObject.Topic]));
+        end;
+
+        const
+          FooTopicName = 'FooTopic';
+        var
+          FooEventBus: IbtkEventBus;
+          FooEventListener: TFooEventListener;
+          FooListenerInfo: TbtkListenerInfo;
+
+        begin
+          //get eventbus
+          FooEventBus := TbtkEventBus.GetEventBus('FooEventBus');
+
+          FooEventListener := TFooEventListener.Create;
+          try
+            //register listener and get listner info
+            FooListenerInfo := FooEventBus.Register(FooEventListener);
+
+            //set topicfilter for handler
+            FooListenerInfo.HandlerFilters.Items[TbtkEventObject].Filters[TbtkEventObject.sEventFilterTopicName].Value := FooTopicName;
+
+            //create and send event
+            FooEventBus.Send(TbtkEventObject.Create(FooTopicName));
+          finally
+            FooEventListener.Free;
+            FooEventBus := nil;
+          end;
+          Readln;
+        end.
+```
