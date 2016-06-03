@@ -117,27 +117,27 @@ EventBus предназначен для обеспечения взаимоде
           Writeln(Format('======'#13#10'Event with topic "%s" sended', [EventObject.Topic]));
         end;
 
+        const
+          ebFoo = 'FooEventBus';
         var
-          FooEventBus: IbtkEventBus;
           FooEventListener: TFooEventListener;
           FooTopicName: string;
         begin
-          //get eventbus
-          FooEventBus := TbtkEventBus.GetEventBus('FooEventBus');
+          //register class for eventbus with name 'FooEventBus'
+          RegisterEventBusClass(TbtkEventBus, ebFoo);
 
           FooEventListener := TFooEventListener.Create;
           try
             //register listener
-            FooEventBus.Register(FooEventListener);
+            EventBus(ebFoo).Register(FooEventListener);
 
             Write('Write topic: ');
             ReadLn(FooTopicName);
 
             //create and send event
-            FooEventBus.Send(TbtkEventObject.Create(FooTopicName));
+            EventBus(ebFoo).Send(TbtkEventObject.Create(FooTopicName));
           finally
             FooEventListener.Free;
-            FooEventBus := nil;
           end;
           Readln;
         end.
@@ -170,27 +170,25 @@ EventBus предназначен для обеспечения взаимоде
         const
           FooTopicName = 'FooTopic';
         var
-          FooEventBus: IbtkEventBus;
           FooEventListener: TFooEventListener;
           FooListenerInfo: TbtkListenerInfo;
 
         begin
-          //get eventbus
-          FooEventBus := TbtkEventBus.GetEventBus('FooEventBus');
+          //register class for eventbus with empty name
+          RegisterEventBusClass(TbtkEventBus);
 
           FooEventListener := TFooEventListener.Create;
           try
             //register listener and get listner info
-            FooListenerInfo := FooEventBus.Register(FooEventListener);
+            FooListenerInfo := EventBus.Register(FooEventListener);
 
             //set topicfilter for handler
             FooListenerInfo.HandlerFilters.Items[TbtkEventObject].Filters[TbtkEventObject.sEventFilterTopicName].Value := FooTopicName;
 
             //create and send event
-            FooEventBus.Send(TbtkEventObject.Create(FooTopicName));
+            EventBus.Send(TbtkEventObject.Create(FooTopicName));
           finally
             FooEventListener.Free;
-            FooEventBus := nil;
           end;
           Readln;
         end.

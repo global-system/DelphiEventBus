@@ -494,7 +494,7 @@ type
   /// or get access to the global named EventBus.
   /// </summary>
   TbtkCustomEventBus = class(TInterfacedObject, IbtkEventBus)
-  strict private
+  private
     type
       TEventBusName = string;
     class var FEventBusDictionary: TDictionary<TEventBusName, TbtkCustomEventBus>;
@@ -535,6 +535,8 @@ type
     procedure UnRegister(AListener: TObject);
   end;
 
+  TbtkEventBusClass = class of TbtkCustomEventBus;
+
   TbtkCustomEventSender = class(TInterfacedObject)
   protected
     procedure DoExecuteHandlers(AEventObject: IbtkEventObject; AHandlerEnumerator: IbtkEventHandlerEnumerator; AExceptionHandler: TbtkEventExceptionHandler);
@@ -562,10 +564,26 @@ type
 var
   ThreadLockWaitingTimeout: Cardinal = 30000;
 
+/// <summary>
+/// Registers EventBus class for the name.
+/// </summary>
+procedure RegisterEventBusClass(AClass: TbtkEventBusClass; AName: TbtkCustomEventBus.TEventBusName = '');
+
+/// <summary>
+/// Returns the named global EventBus.
+/// </summary>
+/// <remarks>
+/// Unlike method <see cref="btkEventBus|TbtkCustomEventBus.GetEventBus">TbtkCustomEventBus.GetEventBus</see>
+/// there is no need to know the class.
+/// Can only be used to call the registered EventBuses by RegisterEventBusClass.
+/// </remarks>
+function EventBus(AName: TbtkCustomEventBus.TEventBusName = ''): IbtkEventBus;
+
 implementation
 
 var
   RttiContext: TRttiContext;
+  EventBusClassDictionary: TDictionary<TbtkCustomEventBus.TEventBusName, TbtkEventBusClass>;
 
 function NormalizeFilterName(AFilterName: string): string;
 begin
@@ -578,6 +596,20 @@ begin
     Result := AFilterValue
   else
     Result := LowerCase(AFilterValue);
+end;
+
+procedure RegisterEventBusClass(AClass: TbtkEventBusClass; AName: TbtkCustomEventBus.TEventBusName);
+begin
+  EventBusClassDictionary.AddOrSetValue(AName, AClass);
+end;
+
+function EventBus(AName: TbtkCustomEventBus.TEventBusName = ''): IbtkEventBus;
+var
+  eventBusClass: TbtkEventBusClass;
+begin
+  if not EventBusClassDictionary.TryGetValue(AName, eventBusClass) then
+    raise Exception.CreateFmt('Not registred class for eventbus "%s"', [AName]);
+  Result := eventBusClass.GetEventBus(AName);
 end;
 
 { EventFilterAttribute }
@@ -1354,8 +1386,10 @@ end;
 
 initialization
   RttiContext := TRttiContext.Create;
+  EventBusClassDictionary := TDictionary<TbtkCustomEventBus.TEventBusName, TbtkEventBusClass>.Create;
 
 finalization
   RttiContext.Free;
+  EventBusClassDictionary.Free;
 
 end.
