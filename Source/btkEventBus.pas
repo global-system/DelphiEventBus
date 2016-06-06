@@ -31,6 +31,9 @@ type
   /// </summary>
   EventHandlerAttribute = class(TCustomAttribute);
 
+  EEventBus = class(Exception)
+  end;
+
   /// <summary>TEventFilterProperties
   /// Properties of eventfilter.
   /// <value><b>efpIsPartOfHashingString</b> - this property is responsible for adding the filter in a hash.
@@ -613,7 +616,7 @@ var
   eventBusClass: TbtkEventBusClass;
 begin
   if not EventBusClassDictionary.TryGetValue(AName, eventBusClass) then
-    raise Exception.CreateFmt('Not registred class for eventbus "%s"', [AName]);
+    raise EEventBus.CreateFmt('Not registred class for eventbus "%s"', [AName]);
   Result := eventBusClass.GetEventBus(AName);
 end;
 
@@ -713,7 +716,7 @@ begin
     if parameterType.InheritsFrom(TbtkEventObject) then
       Exit(TbtkEventObjectClass(parameterType));
   end;
-  raise Exception.Create('Handler must be a procedure of object and contain the a single parameter of type ' + TbtkEventObject.ClassName);
+  raise EEventBus.Create('Handler must be a procedure of object and contain the a single parameter of type ' + TbtkEventObject.ClassName);
 end;
 
 { TbtkEventHandlersClassInfo }
@@ -1117,7 +1120,7 @@ begin
           handler.Unlock;
         end
         else
-          raise Exception.Create('Could not lock handler');
+          raise EEventBus.Create('Could not lock handler');
         if handlerList.Count = 0 then
           FEventHandlers[AEventObjectClass].HandlerLists.Remove(eventHashingString);
         Break;
@@ -1138,7 +1141,7 @@ begin
           handler.Unlock;
         end
         else
-          raise Exception.Create('Could not lock handler');
+          raise EEventBus.Create('Could not lock handler');
         Break;
       end;
 end;
@@ -1166,7 +1169,7 @@ begin
     FEventBusDictionary.Add(AName, eventBusInfo);
   end;
   if not eventBusInfo.&Class.InheritsFrom(Self) then
-    raise Exception.Create('Incorrectly specified class of eventbus');
+    raise EEventBus.Create('Incorrectly specified class of eventbus');
   Result := eventBusInfo.EventBus;
 end;
 
@@ -1237,7 +1240,7 @@ var
 
 begin
   if not(AEventObject.Instance is TbtkEventObject) then
-    raise Exception.Create('Event object must be inherits from TbtkEventObject class');
+    raise EEventBus.Create('Event object must be inherits from TbtkEventObject class');
 
   hooks := TbtkHookList.Create;
   handlers := TbtkHandlerList.Create;
