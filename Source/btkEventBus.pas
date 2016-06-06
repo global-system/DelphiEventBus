@@ -497,7 +497,12 @@ type
   private
     type
       TEventBusName = string;
-    class var FEventBusDictionary: TDictionary<TEventBusName, TbtkCustomEventBus>;
+      TEventBusInfo = record
+        EventBus: IbtkEventBus;
+        &Class: TClass;
+        constructor Create(AEventBus: TbtkCustomEventBus);
+      end;
+    class var FEventBusDictionary: TDictionary<TEventBusName, TEventBusInfo>;
   private
     FName: string;
     FListenersInfo: TObjectDictionary<TObject, TbtkListenerInfo>;
@@ -1048,6 +1053,14 @@ begin
   HandlerLists[eventHandler.Filters.HashingString].Add(eventHandler);
 end;
 
+{ TbtkCustomEventBus.TEventBusInfo }
+
+constructor TbtkCustomEventBus.TEventBusInfo.Create(AEventBus: TbtkCustomEventBus);
+begin
+  EventBus := AEventBus;
+  &Class := AEventBus.ClassType;
+end;
+
 { TbtkEventBus }
 
 procedure TbtkCustomEventBus.AddFromListener(AEventObjectClass: TbtkEventObjectClass; AListenerInfo: TbtkListenerInfo);
@@ -1132,7 +1145,7 @@ end;
 
 class constructor TbtkCustomEventBus.Create;
 begin
-  FEventBusDictionary := TDictionary<TEventBusName, TbtkCustomEventBus>.Create;
+  FEventBusDictionary := TDictionary<TEventBusName, TEventBusInfo>.Create;
 end;
 
 class destructor TbtkCustomEventBus.Destroy;
@@ -1143,16 +1156,18 @@ end;
 class function TbtkCustomEventBus.GetEventBus(AName: TEventBusName): IbtkEventBus;
 var
   eventBus: TbtkCustomEventBus;
+  eventBusInfo: TEventBusInfo;
 begin
-  if not FEventBusDictionary.TryGetValue(AName, eventBus) then
+  if not FEventBusDictionary.TryGetValue(AName, eventBusInfo) then
   begin
     eventBus := Self.Create;
     eventBus.FName := AName;
-    FEventBusDictionary.Add(AName, eventBus);
+    eventBusInfo := TEventBusInfo.Create(eventBus);
+    FEventBusDictionary.Add(AName, eventBusInfo);
   end;
-  if not(eventBus is Self) then
+  if not eventBusInfo.&Class.InheritsFrom(Self) then
     raise Exception.Create('Incorrectly specified class of eventbus');
-  Result := eventBus;
+  Result := eventBusInfo.EventBus;
 end;
 
 constructor TbtkCustomEventBus.Create;

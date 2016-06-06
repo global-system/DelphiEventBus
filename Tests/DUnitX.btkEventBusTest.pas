@@ -268,7 +268,7 @@ procedure TbtkEventBusTest.Setup;
 var
   i: Integer;
 begin
-  EventBus := TbtkEventBus.GetEventBus;
+  EventBus := TbtkEventBus.Create;
   Listener := TMock<TbtkTestEventListener>.Create;
   InvalidListener := TMock<TbtkTestInvalidEventListener>.Create;
   for i := Low(Listeners) to High(Listeners) do
@@ -730,7 +730,7 @@ procedure TbtkEventFiltersTest.Setup;
 var
   listenerInfo: TbtkListenerInfo;
 begin
-  EventBus := TbtkEventBus.GetEventBus;
+  EventBus := TbtkEventBus.Create;
   Listener := TMock<TbtkTestEventListener>.Create;
   listenerInfo := EventBus.Register(Listener);
   EventFilters := listenerInfo.HandlerFilters[TbtkTestEventObject];
