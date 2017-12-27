@@ -838,7 +838,8 @@ begin
   inherited;
   case Action of
     cnAdded: Value.OnValueChanged := FilterValueChanged;
-    cnRemoved..cnExtracted: Value.OnValueChanged := nil;
+    cnRemoved: ;
+    cnExtracted: Value.OnValueChanged := nil;
   end;
 end;
 
