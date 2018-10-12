@@ -5,7 +5,7 @@ Implementation of event bus pattern for Delphi XE
 
 EventBus предназначен для обеспечения взаимодействия между различными компонентами, без повышения связанности.
 
-###Особенности
+### Особенности
 
  - **События**
    - Тип события определяется классом.
@@ -47,7 +47,7 @@ EventBus предназначен для обеспечения взаимоде
        - Порядок вызова соответствует обратному порядку регистрации.
    - Тип обработчика определятся аннотацией.
 
-###Example of use
+### Example of use
 ```delphi
 	//event class declaration
 	Type
@@ -92,7 +92,7 @@ EventBus предназначен для обеспечения взаимоде
 	//listener unregistration
 	  EventBus.Unregister(FooListener);
 ```
-###Minimalistic example of use eventhook
+### Minimalistic example of use eventhook
 ```delphi
 	program EventHookExample;
 
@@ -142,7 +142,7 @@ EventBus предназначен для обеспечения взаимоде
           Readln;
         end.
 ```
-###Minimalistic example of use eventhandler
+### Minimalistic example of use eventhandler
 ```delphi
 	program EventHookExample;
 
