@@ -3,49 +3,49 @@
 
 Implementation of event bus pattern for Delphi XE
 
-EventBus предназначен для обеспечения взаимодействия между различными компонентами, без повышения связанности.
+EventBus is designed to provide interaction between different components, without increasing connectivity.
 
-### Особенности
+###Features
 
- - **События**
-   - Тип события определяется классом.
-   - События наследуются.
-   - Базовым классом для любого события является TbtkEventObject.
- - **Фильтрация**
-   - События могут содержать фильтры.
-   - Значения фильтров регистрочувствительны.
-   - Для объявления фильтров используются аннотации методов класса события.
-   - В качестве фильтра используются функции без параметров, которые должны возвращать значение фильтра ввиде строки.
-   - Фильтры идентифицируются по имени.
-   - Имя фильтра указывается в аннотации фильтра.
-   - Имена фильтров не регистрочувствительны.
-   - В фильтрах используется два режима:
-     - Простой режим.
-       - Значению фильтра события соответствуют пустые и точно совпадающие значения фильтра обработчика.
-       - Этот режим используется поумолчанию.
-     - Хэшируемый режим.
-       - Значению фильтра события соответствуют только точно совпадающие значения фильтра обработчика.
-       - Хэширование ускоряет формирование списков обработчиков, которые будут вызваны.
-   - Режим фильтра указывается в аннотации фильтра.
-   - Базовый класс содержит один хэшируемый фильтр с именем "Topic"
- - **Обработчики**
-   - Добавление обработчиков событий производится путём регистрации слушателя в шине.
-   - Удаление обработчиков событий производится путём дерегистрации слушателя в шине.
-   - Значения фильтров обработчиков событий слушателя устанавливаются после регистрации.
-   - Значения фильтров привязываются к типу события, и равны для разных обработчиков одного события.
-   - Для объявления обработчиков используются аннотации методов слушателя.
-   - Обработчики должны содержать один входной параметр с типом класса обрабатываемого события.
-   - По типу параметра обработчика определяются события которые он будет обрабатывать.
-   - Обработчик вызывается и для всех наследников обрабатываемого им события.
-   - Используется два типа обработчиков событий:
-     - Простые обработчики.
-       - При вызове учитывается соответствие условий фильтрации. 
-       - Порядок вызова не гарантируется.
-     - Хуки.
-       - Вызываются перед вызовом простых обработчиков.
-       - Игнорируют условия фильтрации.
-       - Порядок вызова соответствует обратному порядку регистрации.
-   - Тип обработчика определятся аннотацией.
+ - **Development**
+   - The type of event is determined by the class.
+   - Events are inherited.
+   - The base class for any event is TbtkEventObject.
+ - **Filtering**
+   - Events can contain filters.
+   - Filter values ​​are case sensitive.
+   - To declare filters, annotations of event class methods are used.
+   - As a filter, functions without parameters are used that should return the filter value as a string.
+   - Filters are identified by name.
+   - The filter name is specified in the filter annotation.
+   - Filter names are not case sensitive.
+   - Filters use two modes:
+     - Simple mode.
+       - The event filter value corresponds to empty and exactly matching handler filter values.
+       - This mode is used by default.
+     - Hashable mode.
+       - The event filter value only matches exactly the same handler filter value.
+       - Hashing accelerates the formation of lists of handlers to be called.
+   - Filter mode is specified in the filter annotation.
+   - The base class contains one hash filter named "Topic"
+ - **Handlers**
+   - Adding event handlers is done by registering a listener on the bus.
+   - Removal of event handlers is performed by unregistration of the listener in the bus.
+   - The filter values ​​of listener event handlers are set after registration.
+   - Filter values ​​are bound to the event type, and are equal for different handlers of the same event.
+   - To declare handlers, annotations of listener methods are used.
+   - Handlers must contain one input parameter with the class type of the event being processed.
+   - The type of the handler parameter determines the events that it will process.
+   - The handler is invoked for all heirs of the event processed by it.
+   - Two types of event handlers are used:
+     - Simple handlers.
+       - When calling, the filtering conditions are taken into account.
+       - The order of the call is not guaranteed.
+     - Hooks.
+       - Called before calling simple handlers.
+       - Ignore filtering conditions.
+       - The order of the call corresponds to the reverse order of registration.
+   - The type of handler will be determined by annotation.
 
 ### Example of use
 ```delphi
@@ -79,7 +79,7 @@ EventBus предназначен для обеспечения взаимоде
 	  end;
 
 	  EventBus := TbtkEventBus.GetEventBus('FooEventBus');
-	  
+
 	  ListenerInfo := EventBus.Register(FooEventListener);
 
 	//setting filter parameters
