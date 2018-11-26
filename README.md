@@ -1,11 +1,11 @@
-﻿DelphiEventBus
+DelphiEventBus
 ==============
 
 Implementation of event bus pattern for Delphi XE
 
 EventBus is designed to provide interaction between different components, without increasing connectivity.
 
-###Features
+### Features
 
  - **Development**
    - The type of event is determined by the class.
@@ -13,7 +13,7 @@ EventBus is designed to provide interaction between different components, withou
    - The base class for any event is TbtkEventObject.
  - **Filtering**
    - Events can contain filters.
-   - Filter values ​​are case sensitive.
+   - Filter values are case sensitive.
    - To declare filters, annotations of event class methods are used.
    - As a filter, functions without parameters are used that should return the filter value as a string.
    - Filters are identified by name.
@@ -31,8 +31,8 @@ EventBus is designed to provide interaction between different components, withou
  - **Handlers**
    - Adding event handlers is done by registering a listener on the bus.
    - Removal of event handlers is performed by unregistration of the listener in the bus.
-   - The filter values ​​of listener event handlers are set after registration.
-   - Filter values ​​are bound to the event type, and are equal for different handlers of the same event.
+   - The filter values of listener event handlers are set after registration.
+   - Filter values are bound to the event type, and are equal for different handlers of the same event.
    - To declare handlers, annotations of listener methods are used.
    - Handlers must contain one input parameter with the class type of the event being processed.
    - The type of the handler parameter determines the events that it will process.
