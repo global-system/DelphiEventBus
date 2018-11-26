@@ -7,45 +7,45 @@ EventBus is designed to provide interaction between different components, withou
 
 ### Features
 
- - **Development**
-   - The type of event is determined by the class.
-   - Events are inherited.
-   - The base class for any event is TbtkEventObject.
- - **Filtering**
-   - Events can contain filters.
-   - Filter values are case sensitive.
-   - To declare filters, annotations of event class methods are used.
-   - As a filter, functions without parameters are used that should return the filter value as a string.
-   - Filters are identified by name.
-   - The filter name is specified in the filter annotation.
-   - Filter names are not case sensitive.
-   - Filters use two modes:
-     - Simple mode.
-       - The event filter value corresponds to empty and exactly matching handler filter values.
-       - This mode is used by default.
-     - Hashable mode.
-       - The event filter value only matches exactly the same handler filter value.
-       - Hashing accelerates the formation of lists of handlers to be called.
-   - Filter mode is specified in the filter annotation.
-   - The base class contains one hash filter named "Topic"
- - **Handlers**
-   - Adding event handlers is done by registering a listener on the bus.
-   - Removal of event handlers is performed by unregistration of the listener in the bus.
-   - The filter values of listener event handlers are set after registration.
-   - Filter values are bound to the event type, and are equal for different handlers of the same event.
-   - To declare handlers, annotations of listener methods are used.
-   - Handlers must contain one input parameter with the class type of the event being processed.
-   - The type of the handler parameter determines the events that it will process.
-   - The handler is invoked for all heirs of the event processed by it.
-   - Two types of event handlers are used:
-     - Simple handlers.
-       - When calling, the filtering conditions are taken into account.
-       - The order of the call is not guaranteed.
-     - Hooks.
-       - Called before calling simple handlers.
-       - Ignore filtering conditions.
-       - The order of the call corresponds to the reverse order of registration.
-   - The type of handler will be determined by annotation.
+- **Development**
+  - The type of event is determined by the class.
+  - Events are inherited.
+  - The base class for any event is TbtkEventObject.
+- **Filtering**
+  - Events can contain filters.
+  - Filter values are case sensitive.
+  - To declare filters, annotations of event class methods are used.
+  - As a filter, functions without parameters are used that should return the filter value as a string.
+  - Filters are identified by name.
+  - The filter name is specified in the filter annotation.
+  - Filter names are not case sensitive.
+  - Filters use two modes:
+    - Simple mode.
+      - The event filter value corresponds to empty and exactly matching handler filter values.
+      - This mode is used by default.
+    - Hashable mode.
+      - The event filter value only matches exactly the same handler filter value.
+      - Hashing accelerates the formation of lists of handlers to be called.
+  - Filter mode is specified in the filter annotation.
+  - The base class contains one hash filter named "Topic"
+- **Handlers**
+  - Adding event handlers is done by registering a listener on the bus.
+  - Removal of event handlers is performed by unregistration of the listener in the bus.
+  - The filter values of listener event handlers are set after registration.
+  - Filter values are bound to the event type, and are equal for different handlers of the same event.
+  - To declare handlers, annotations of listener methods are used.
+  - Handlers must contain one input parameter with the class type of the event being processed.
+  - The type of the handler parameter determines the events that it will process.
+  - The handler is invoked for all heirs of the event processed by it.
+  - Two types of event handlers are used:
+    - Simple handlers.
+      - When calling, the filtering conditions are taken into account.
+      - The order of the call is not guaranteed.
+    - Hooks.
+      - Called before calling simple handlers.
+      - Ignore filtering conditions.
+      - The order of the call corresponds to the reverse order of registration.
+  - The type of handler will be determined by annotation.
 
 ### Example of use
 ```delphi
