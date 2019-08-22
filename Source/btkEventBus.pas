@@ -1276,11 +1276,11 @@ begin
       for i := handlers.Count - 1 downto 0 do
         handlerEnumerator.AddHandler(handlers[i]);
 
-      InternalSend(AEventObject, handlerEnumerator, AExceptionHandler);
     except
       handlerEnumerator.Free;
       raise;
     end;
+    InternalSend(AEventObject, handlerEnumerator, AExceptionHandler);
 
   finally
     hooks.Free;
