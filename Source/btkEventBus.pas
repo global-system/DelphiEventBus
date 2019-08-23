@@ -399,16 +399,15 @@ type
   /// <summary>TbtkEeventHandlerEnumerator
   /// Implement enumeration list of handlers.
   /// </summary>
-  TbtkEeventHandlerEnumerator = class(TInterfacedObject, IbtkEventHandlerEnumerator)
+  TbtkEventHandlerEnumerator = class(TInterfacedObject, IbtkEventHandlerEnumerator)
   private
     FHandlerList: TbtkCustomHandlerList;
     FIndex: Integer;
     function GetCurrent: IbtkCustomEventHandler;
   public
-    constructor Create; reintroduce;
+    constructor Create(AHooks: TbtkHookList; AHandlers: TbtkHandlerList); reintroduce;
     destructor Destroy; override;
     function MoveNext: Boolean;
-    procedure AddHandler(AHandler: IbtkCustomEventHandler);
     property Current: IbtkCustomEventHandler read GetCurrent;
   end;
 
@@ -956,35 +955,36 @@ end;
 
 { TbtkEeventHandlerEnumerator }
 
-function TbtkEeventHandlerEnumerator.GetCurrent: IbtkCustomEventHandler;
+function TbtkEventHandlerEnumerator.GetCurrent: IbtkCustomEventHandler;
 begin
   Result := FHandlerList[FIndex];
 end;
 
-constructor TbtkEeventHandlerEnumerator.Create;
+constructor TbtkEventHandlerEnumerator.Create(AHooks: TbtkHookList; AHandlers: TbtkHandlerList);
+var
+  i: Integer;
 begin
   inherited Create;
   FIndex := -1;
   FHandlerList := TbtkCustomHandlerList.Create;
+  for i := AHooks.Count -1 downto 0 do
+    FHandlerList.Add(AHooks[i]);
+  for i := AHandlers.Count - 1 downto 0 do
+    FHandlerList.Add(AHandlers[i]);
 end;
 
-destructor TbtkEeventHandlerEnumerator.Destroy;
+destructor TbtkEventHandlerEnumerator.Destroy;
 begin
   FHandlerList.Free;
   inherited;
 end;
 
-function TbtkEeventHandlerEnumerator.MoveNext: Boolean;
+function TbtkEventHandlerEnumerator.MoveNext: Boolean;
 begin
   if FIndex >= FHandlerList.Count then
     Exit(False);
   Inc(FIndex);
   Result := FIndex < FHandlerList.Count;
-end;
-
-procedure TbtkEeventHandlerEnumerator.AddHandler(AHandler: IbtkCustomEventHandler);
-begin
-  FHandlerList.Add(AHandler);
 end;
 
 { TbtkListenerInfo }
@@ -1236,9 +1236,6 @@ var
 
   hooks: TbtkHookList;
   handlers: TbtkHandlerList;
-
-  handlerEnumerator: TbtkEeventHandlerEnumerator;
-
 begin
   if not(AEventObject.Instance is TbtkEventObject) then
     raise EEventBus.Create('Event object must be inherits from TbtkEventObject class');
@@ -1268,19 +1265,7 @@ begin
     end;
 
     hooks.Sort(TbtkEventHookComparer.Create);
-    handlerEnumerator := TbtkEeventHandlerEnumerator.Create;
-    try
-      for i := hooks.Count -1 downto 0 do
-        handlerEnumerator.AddHandler(hooks[i]);
-
-      for i := handlers.Count - 1 downto 0 do
-        handlerEnumerator.AddHandler(handlers[i]);
-
-    except
-      handlerEnumerator.Free;
-      raise;
-    end;
-    InternalSend(AEventObject, handlerEnumerator, AExceptionHandler);
+    InternalSend(AEventObject, TbtkEventHandlerEnumerator.Create(hooks, handlers), AExceptionHandler);
 
   finally
     hooks.Free;
