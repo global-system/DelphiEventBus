@@ -151,11 +151,21 @@ type
     [Test]
     procedure Send_HookContainChildClassOfEvent_HookNotCalled;
     [Test]
+    procedure Send_ExceptionWasRaisedInHandlerAndExceptionHandlerIsNotExist_WillNotRaiseAny;
+    [Test]
     procedure Send_ExceptionRaisedInHandlerAndNotExistExceptionHandler_ApplicationHandleExceptionCalled;
     [Test]
     procedure Send_ExceptionRaisedInHandlerAndExistExceptionHandler_ApplicationHandleExceptionNotCalled;
     [Test]
     procedure Send_ExceptionRaisedInHandlerAndExistExceptionHandler_ExceptionHandlerCalled;
+    [Test]
+    procedure Send_ExceptionWasRaisedInHandlerAndExceptionHandlerIsExist_ExceptionInExceptionHandlerIsOriginalException;
+    [Test]
+    procedure Send_ExceptionWasRaisedInHandlerAndExceptionHandlerRaisedNothing_WillNotRaiseAny;
+    [Test]
+    procedure Send_ExceptionWasRaisedInHandlerAndExceptionHandlerRaisedAcquiredException_FinalExceptionIsOriginalException;
+    [Test]
+    procedure Send_ExceptionWasRaisedInHandlerAndExceptionHandlerRaisedOuterException_InnerExceptionOfFinalExceptionIsOriginalException;
     [Test]
     procedure Send_ExceptionRaisedInEachHooksAndHandlersRaisedAnException_AllHooksAndHandlersCalled;
     [Test]
@@ -194,6 +204,9 @@ type
 
 
 implementation
+
+uses
+  System.Rtti;
 
 { TbtkCustomTestEventObject }
 
@@ -540,6 +553,28 @@ begin
   end;
 end;
 
+procedure TbtkEventBusTest.Send_ExceptionWasRaisedInHandlerAndExceptionHandlerIsNotExist_WillNotRaiseAny;
+var
+  fakeExceptionHandler: TMock<TbtkFakeExceptionHandler>;
+begin
+  fakeExceptionHandler := TMock<TbtkFakeExceptionHandler>.Create;
+  Application.OnException := fakeExceptionHandler.Instance.HandleException;
+  RegisterListener;
+  try
+    Listener.Setup.WillRaise('Handler', Exception);
+
+    Assert.WillNotRaiseAny(
+      procedure
+      begin
+        EventBus.Send(TbtkTestEventObject.Create('', '', '', ''))
+      end);
+  finally
+    UnRegisterListener;
+    Application.OnException := nil;
+    fakeExceptionHandler.Free;
+  end;
+end;
+
 procedure TbtkEventBusTest.Send_ExceptionRaisedInHandlerAndNotExistExceptionHandler_ApplicationHandleExceptionCalled;
 var
   fakeExceptionHandler: TMock<TbtkFakeExceptionHandler>;
@@ -607,6 +642,118 @@ begin
     UnRegisterListener;
     Application.OnException := nil;
     fakeExceptionHandler.Free;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_ExceptionWasRaisedInHandlerAndExceptionHandlerIsExist_ExceptionInExceptionHandlerIsOriginalException;
+var
+  originalException: Exception;
+  exceptionInExceptionHandlerIsOriginalException: Boolean;
+begin
+  RegisterListener;
+  try
+    originalException := Exception.Create('');
+    Listener.Setup.WillExecute('Handler',
+      function (const args : TArray<TValue>; const ReturnType : TRttiType) : TValue
+      begin
+        raise originalException;
+      end);
+
+    exceptionInExceptionHandlerIsOriginalException := False;
+    EventBus.Send(TbtkTestEventObject.Create('', '', '', ''),
+      procedure(AException: Exception)
+      begin
+        exceptionInExceptionHandlerIsOriginalException := AException = originalException;
+      end);
+
+    Assert.IsTrue(exceptionInExceptionHandlerIsOriginalException);
+  finally
+    UnRegisterListener;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_ExceptionWasRaisedInHandlerAndExceptionHandlerRaisedNothing_WillNotRaiseAny;
+begin
+  RegisterListener;
+  try
+    Listener.Setup.WillRaise('Handler', Exception, '');
+
+    Assert.WillNotRaiseAny(
+      procedure
+      begin
+        EventBus.Send(TbtkTestEventObject.Create('', '', '', ''),
+          procedure(AException: Exception)
+          begin
+            //nothing
+          end)
+      end);
+
+  finally
+    UnRegisterListener;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_ExceptionWasRaisedInHandlerAndExceptionHandlerRaisedAcquiredException_FinalExceptionIsOriginalException;
+var
+  originalException: Exception;
+  finalExceptionIsOriginalException: Boolean;
+begin
+  RegisterListener;
+  try
+    originalException := Exception.Create('');
+    Listener.Setup.WillExecute('Handler',
+      function (const args : TArray<TValue>; const ReturnType : TRttiType) : TValue
+      begin
+        raise originalException;
+      end);
+
+    finalExceptionIsOriginalException := False;
+    try
+      EventBus.Send(TbtkTestEventObject.Create('', '', '', ''),
+        procedure(AException: Exception)
+        begin
+          raise Exception(AcquireExceptionObject);
+        end);
+    except
+      on E: Exception do
+        finalExceptionIsOriginalException := E = originalException;
+    end;
+
+    Assert.IsTrue(finalExceptionIsOriginalException);
+  finally
+    UnRegisterListener;
+  end;
+end;
+
+procedure TbtkEventBusTest.Send_ExceptionWasRaisedInHandlerAndExceptionHandlerRaisedOuterException_InnerExceptionOfFinalExceptionIsOriginalException;
+var
+  originalException: Exception;
+  innerExceptionOfFinalExceptionIsOriginalException: Boolean;
+begin
+  RegisterListener;
+  try
+    originalException := Exception.Create('');
+    Listener.Setup.WillExecute('Handler',
+      function (const args : TArray<TValue>; const ReturnType : TRttiType) : TValue
+      begin
+        raise originalException;
+      end);
+
+    innerExceptionOfFinalExceptionIsOriginalException := False;
+    try
+      EventBus.Send(TbtkTestEventObject.Create('', '', '', ''),
+        procedure(AException: Exception)
+        begin
+          Exception.RaiseOuterException(Exception.Create('OuterException'));
+        end);
+    except
+      on E: Exception do
+        innerExceptionOfFinalExceptionIsOriginalException := E.InnerException = originalException;
+    end;
+
+    Assert.IsTrue(innerExceptionOfFinalExceptionIsOriginalException);
+  finally
+    UnRegisterListener;
   end;
 end;
 
